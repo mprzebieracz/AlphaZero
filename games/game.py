@@ -2,21 +2,37 @@ from abc import ABC, abstractmethod
 
 class Game(ABC):
     @abstractmethod
-    def get_legal_actions(self, state):
+    def reset(self):
         pass
 
     @abstractmethod
-    def get_next_state(self, state, action):
+    def get_action_size(self):
         pass
 
     @abstractmethod
-    def is_terminal(self, state):
+    def get_legal_actions(self):
         pass
 
     @abstractmethod
-    def reward(self, state):
+    def step(action):
         pass
 
     @abstractmethod
-    def initial_state(self):
+    def is_terminal(self):
+        pass
+
+    @abstractmethod
+    def reward(self):
+        pass
+
+    @abstractmethod
+    def state(self):
+        pass
+
+    @abstractmethod
+    def clone(self):
+        pass
+
+    @abstractmethod
+    def render(self):
         pass
