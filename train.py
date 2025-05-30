@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from torch import nn
+from torch.nn import functional as F
 
 class ReplayBuffer:
     def __init__(self, max_size, state_dim, action_dim):
@@ -40,4 +41,47 @@ class ReplayBuffer:
         self.value_buf.fill(0)
 
 
+class AlphaZeroTrainer:
+    def __init__(self, model: nn.Module, replay_buffer: ReplayBuffer, optimizer: torch.optim.Optimizer, device='cpu', minibatch_size=4096):
+        self.model = model
+        self.replay_buffer = replay_buffer
+        self.optimizer = optimizer
+        self.minibatch_size = minibatch_size
+        self.device = device
+        self.model.to(device)
+    
+    def train(self, batch_size=64, train_steps=1000):
+        self.model.train()
+        accum_steps = self.minibatch_size // batch_size
+
+        for step in range(train_steps):
+            states, target_policies, target_values = self.replay_buffer.sample(self.minibatch_size)
+            states = states.to(self.device)
+            target_policies = target_policies.to(self.device)
+            target_values = target_values.to(self.device)
+
+            for i in range(accum_steps):
+                start = i * batch_size
+                end = start + batch_size
+
+                s_batch = states[start:end]
+                pi_batch = target_policies[start:end]
+                v_batch = target_values[start:end]
+
+                p_logits, v_preds = self.model(s_batch)
+                logp = F.log_softmax(p_logits, dim=1)
+
+                policy_loss = -(logp * pi_batch).sum(dim=1).mean()
+                value_loss = F.mse_loss(v_preds.squeeze(), v_batch)
+
+                loss = policy_loss + value_loss
+                loss /= accum_steps
+                loss.backward()
+
+            self.optimizer.step()
+            self.optimizer.zero_grad()
+
+            if step % 100 == 0:
+                print(f"Step {step}, Policy Loss: {policy_loss.item()}, Value Loss: {value_loss.item()}")
+        
 
