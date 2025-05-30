@@ -14,7 +14,7 @@ class Game(ABC):
         pass
 
     @abstractmethod
-    def step(action):
+    def step(self, action):
         pass
 
     @abstractmethod
@@ -26,7 +26,7 @@ class Game(ABC):
         pass
 
     @abstractmethod
-    def state(self):
+    def get_canonical_state(self):
         pass
 
     @abstractmethod

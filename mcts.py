@@ -2,7 +2,6 @@ import numpy as np
 import torch
 from torch import nn
 from games.game import Game
-from typing import List, Tuple
 
 class Node:
     def __init__(self, game_state: Game, parent=None, prior=0):
@@ -83,7 +82,9 @@ class MCTS:
 
     @torch.no_grad()
     def _get_policy_and_value(self, game_state: Game, dirichlet_noise=False):
-        policy_logits, value = self.network(game_state.state())
+        policy_logits, value = self.network(game_state.get_canonical_state())
+        policy_logits = policy_logits.squeeze(0)
+        value = value.squeeze(0)
         policy = torch.softmax(policy_logits, dim=-1).cpu().numpy()
         if dirichlet_noise:
             policy = (1 - self.eps) * policy + self.eps * np.random.dirichlet([self.alpha] * game_state.get_action_size())
