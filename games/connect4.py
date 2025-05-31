@@ -4,6 +4,8 @@ import torch
 from games.game import Game
 
 class Connect4(Game):
+    action_dim = 7
+    state_dim = (1, 6, 7)
     _rows = 6
     _cols = 7
     def __init__(self):
@@ -27,34 +29,50 @@ class Connect4(Game):
 
     def get_canonical_state(self):
         return torch.from_numpy(self.state * self.current_player).float().unsqueeze(0).unsqueeze(0)
+    
+    def _check_winner(self):
+        R = self._rows
+        C = self._cols
+        board = self.state
 
-    def reward(self):
-        # Check for a win condition
-        for row in range(self._rows):
-            for col in range(self._cols - 3):
-                if (self.state[row, col] == self.state[row, col + 1] ==
-                    self.state[row, col + 2] == self.state[row, col + 3] != 0):
-                    return self.state[row, col]
+        for r in range(R):
+            for c in range(C - 3):
+                window = board[r, c:c + 4]
+                if np.all(window == 1):
+                    return 1
+                if np.all(window == -1):
+                    return -1
 
-        for col in range(self._cols):
-            for row in range(self._rows - 3):
-                if (self.state[row, col] == self.state[row + 1, col] ==
-                    self.state[row + 2, col] == self.state[row + 3, col] != 0):
-                    return self.state[row, col]
+        for c in range(C):
+            for r in range(R - 3):
+                window = board[r:r + 4, c]
+                if np.all(window == 1):
+                    return 1
+                if np.all(window == -1):
+                    return -1
 
-        for row in range(self._rows - 3):
-            for col in range(self._cols - 3):
-                if (self.state[row, col] == self.state[row + 1, col + 1] ==
-                    self.state[row + 2, col + 2] == self.state[row + 3, col + 3] != 0):
-                    return self.state[row, col]
+        for r in range(R - 3):
+            for c in range(C - 3):
+                window = np.array([board[r + i, c + i] for i in range(4)])
+                if np.all(window == 1):
+                    return 1
+                if np.all(window == -1):
+                    return -1
 
-        for row in range(3, self._rows):
-            for col in range(self._cols - 3):
-                if (self.state[row, col] == self.state[row - 1, col + 1] ==
-                    self.state[row - 2, col + 2] == self.state[row - 3, col + 3] != 0):
-                    return self.state[row, col]
+        for r in range(3, R):
+            for c in range(C - 3):
+                window = np.array([board[r - i, c + i] for i in range(4)])
+                if np.all(window == 1):
+                    return 1
+                if np.all(window == -1):
+                    return -1
 
         return 0
+    
+
+    def reward(self):
+        return self._check_winner()
+
 
     def is_terminal(self):
         if self.reward() != 0:
@@ -69,6 +87,7 @@ class Connect4(Game):
         for row in range(self._rows - 1, -1, -1):
             if self.state[row, action] == 0:
                 self.state[row, action] = self.current_player
+                break
 
         self.current_player = -self.current_player  # Switch player
 

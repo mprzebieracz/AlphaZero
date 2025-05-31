@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
 
 class Game(ABC):
+    action_dim: int
+    state_dim: tuple # (Channels, Height, Width)
+
     @abstractmethod
     def reset(self):
         pass

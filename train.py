@@ -2,6 +2,9 @@ import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
+from typing import Type
+from games.game import Game  
+from mcts import MCTS
 
 class ReplayBuffer:
     def __init__(self, max_size, state_dim, action_dim):
@@ -11,7 +14,7 @@ class ReplayBuffer:
         self.size = 0
         self.ptr, self.max_size = 0, max_size
 
-    def add(self, state, policy, value):
+    def _add(self, state, policy, value):
         self.state_buf[self.ptr] = state
         self.policy_buf[self.ptr] = policy
         self.value_buf[self.ptr] = value
@@ -21,7 +24,7 @@ class ReplayBuffer:
 
     def add(self, trajectory):
         for state, policy, value in trajectory:
-            self.add(state, policy, value)
+            self._add(state, policy, value)
 
     def sample(self, batch_size):
         indices = np.random.choice(self.size, batch_size, replace=False)
@@ -85,3 +88,25 @@ class AlphaZeroTrainer:
                 print(f"Step {step}, Policy Loss: {policy_loss.item()}, Value Loss: {value_loss.item()}")
         
 
+
+def play_game(game_cls: Type[Game], mcts: MCTS, replay_buffer: ReplayBuffer):
+    game = game_cls()
+    game.reset()
+    trajectory = []
+    while not game.is_terminal():
+        canonical_state = game.get_canonical_state()
+        policy = mcts.search(game)
+        action = np.random.choice(len(policy), p=policy)
+        trajectory.append((canonical_state, policy, 0))
+        game.step(action)
+    
+    value = game.reward()
+    for i in range(len(trajectory)):
+        trajectory[i] = (trajectory[i][0], trajectory[i][1], value if i % 2 == 0 else -value)
+    replay_buffer.add(trajectory)
+
+def self_play(game: Type[Game], mcts: MCTS, replay_buffer: ReplayBuffer, num_games: int = 100):
+    for _ in range(num_games):
+        play_game(game, mcts, replay_buffer)
+    
+            
