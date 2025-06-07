@@ -31,10 +31,17 @@ def play_game(game: Game, mcts_policy_fn, human_plays_as=1) -> list[tuple]:
         if player == human_plays_as:
             game.render()
             print(f"Legal actions: {legal_actions}")
-            action = int(input("Enter your action: "))
+            try:
+                action = int(input("Enter your action: "))
+            except Exception:
+                action = -10000
+
             while action not in legal_actions:
                 print("Invalid action, try again.")
-                action = int(input("Enter your action: "))
+                try:
+                    action = int(input("Enter your action: "))
+                except Exception:
+                    action = -10000
             action_probs = {a: 1.0 if a == action else 0.0 for a in legal_actions}
         else:
             action_probs = mcts_policy_fn(game.clone())
