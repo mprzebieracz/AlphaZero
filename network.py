@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class ResidualBlock(nn.Module):
     def __init__(self, channels: int):
         super().__init__()
@@ -19,28 +20,32 @@ class ResidualBlock(nn.Module):
 
 
 class AlphaZeroNetwork(nn.Module):
-    def __init__(self,
-                 input_channels: int,
-                 height: int,
-                 width: int,
-                 num_residual_blocks: int,
-                 action_size: int,
-                 h_channels: int):
+    def __init__(
+        self,
+        input_channels: int,
+        height: int,
+        width: int,
+        num_residual_blocks: int,
+        action_size: int,
+        num_filters: int,
+    ):
         super().__init__()
-        self.conv_in = nn.Conv2d(input_channels, h_channels, kernel_size=3, stride=1, padding=1)
-        self.residual_blocks = nn.Sequential(
-            *[ResidualBlock(h_channels) for _ in range(num_residual_blocks)]
+        self.conv_in = nn.Conv2d(
+            input_channels, num_filters, kernel_size=3, stride=1, padding=1
         )
-        self.bn_in = nn.BatchNorm2d(h_channels)
+        self.residual_blocks = nn.Sequential(
+            *[ResidualBlock(num_filters) for _ in range(num_residual_blocks)]
+        )
+        self.bn_in = nn.BatchNorm2d(num_filters)
 
-        self.policy_conv = nn.Conv2d(h_channels, 2, kernel_size=1)
+        self.policy_conv = nn.Conv2d(num_filters, 2, kernel_size=1)
         self.policy_bn = nn.BatchNorm2d(2)
         self.policy_fc = nn.Linear(2 * height * width, action_size)
 
-        self.value_conv = nn.Conv2d(h_channels, 1, kernel_size=1)
+        self.value_conv = nn.Conv2d(num_filters, 1, kernel_size=1)
         self.value_bn = nn.BatchNorm2d(1)
-        self.value_fc1 = nn.Linear(height * width, h_channels)
-        self.value_fc2 = nn.Linear(h_channels, 1)
+        self.value_fc1 = nn.Linear(height * width, num_filters)
+        self.value_fc2 = nn.Linear(num_filters, 1)
 
     def forward(self, X):
         X = F.relu(self.bn_in(self.conv_in(X)))
