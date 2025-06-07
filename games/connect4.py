@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-from torch.nn.parallel.scatter_gather import scatter_kwargs
 from scipy.signal import convolve2d
 
 from games.game import Game
@@ -27,10 +26,33 @@ class Connect4(Game):
         new_game.current_player = self.current_player
         return new_game
 
-    def render(self):
-        print("\n".join(" ".join(str(cell) for cell in row) for row in self.state))
-        print("-" * self._cols)
-        print(" ".join(str(i) for i in range(self._cols)))
+    # def render(self):
+    #     print("\n".join(" ".join(str(cell) for cell in row) for row in self.state))
+    #     print("-" * self._cols)
+    #     print(" ".join(str(i) for i in range(self._cols)))
+
+    def _unicode_render(self):
+        # Use emojis or Unicode for pieces
+        def piece_repr(cell):
+            if cell == 1:
+                return "🔴"  # Player 1
+            elif cell == -1:
+                return "🟡"  # Player 2
+            else:
+                return "⚪"  # Empty slot
+
+        rows = []
+        for row in self.state:
+            rows.append(" ".join(piece_repr(cell) for cell in row))
+
+        board_str = "\n".join(rows)
+        col_nums = " ".join(str(i) for i in range(self._cols))
+
+        print(board_str)
+        print("―" * (self._cols * 2 - 1))  # separator line
+        print(col_nums)
+
+    render = _unicode_render
 
     def get_canonical_state(self):
         return (

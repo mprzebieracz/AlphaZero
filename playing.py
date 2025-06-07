@@ -18,7 +18,7 @@ def play_game(game: Game, mcts_policy_fn, human_plays_as=1) -> list[tuple]:
         human_plays_as: +1 or -1 to specify which side human plays.
 
     Returns:
-        A list of (state, policy, value) for training (from self-play).
+        Game result
     """
     training_examples = []
     state = game.reset()
@@ -45,6 +45,6 @@ def play_game(game: Game, mcts_policy_fn, human_plays_as=1) -> list[tuple]:
         player *= -1
 
     final_reward = game.reward()
-    return [(state, pi, final_reward * p) for state, pi, p in training_examples]
-    game.reset()
     game.render()
+    return final_reward
+    # return [(state, pi, final_reward * p) for state, pi, p in training_examples]
