@@ -30,6 +30,9 @@ class AlphaZeroNetwork(nn.Module):
         num_filters: int,
     ):
         super().__init__()
+        self._height = height
+        self._width = width
+
         self.conv_in = nn.Conv2d(
             input_channels, num_filters, kernel_size=3, stride=1, padding=1
         )
@@ -61,3 +64,27 @@ class AlphaZeroNetwork(nn.Module):
         value = torch.tanh(self.value_fc2(value))
 
         return policy, value
+
+    def save_az_network(self, path: str):
+        torch.save(
+            {
+                "model_state_dict": self.state_dict(),
+                "init_args": {
+                    "input_channels": self.conv_in.in_channels,
+                    "height": self._height,
+                    "width": self._width,
+                    "num_residual_blocks": len(self.residual_blocks),
+                    "action_size": self.policy_fc.out_features,
+                    "num_filters": self.conv_in.out_channels,
+                },
+            },
+            path,
+        )
+
+    @staticmethod
+    def load_az_network(path: str, device: torch.device) -> "AlphaZeroNetwork":
+        checkpoint = torch.load(path, map_location=device, weights_only=True)
+        model = AlphaZeroNetwork(**checkpoint["init_args"])
+        model = model.to(device)
+        model.load_state_dict(checkpoint["model_state_dict"])
+        return model

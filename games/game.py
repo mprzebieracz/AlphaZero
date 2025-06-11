@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Hashable
 
 import torch
 
@@ -42,4 +42,10 @@ class Game(ABC):
 
     @abstractmethod
     def render(self):
+        pass
+
+
+class GameState(Hashable):
+    @abstractmethod
+    def get_canonical_state(self) -> torch.Tensor:
         pass

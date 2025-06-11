@@ -1,9 +1,24 @@
+from typing import override
 import numpy as np
 import torch
 from scipy.signal import convolve2d
 
-from games.game import Game
+from games.game import Game, GameState
 import torch.nn.functional as F
+
+
+class Connect4GameState(GameState):
+    def __init__(self, tensor: torch.Tensor, hash):
+        self._tensor = tensor
+        self._hash = hash
+
+    @override
+    def __hash__(self):
+        return self._hash
+
+    @override
+    def get_canonical_state(self):
+        return self._tensor
 
 
 class Connect4(Game):

@@ -1,8 +1,8 @@
 from typing import Any, Optional
 import numpy as np
 import torch
-from torch import nn
 from games.game import Game
+from inference_service.inferer import Inferer
 
 
 class Node:
@@ -75,7 +75,7 @@ class Node:
 class MCTS:
     def __init__(
         self,
-        network: nn.Module,
+        network: Inferer,
         c_init=1.25,
         c_base=19652,
         eps=0.25,
@@ -87,12 +87,7 @@ class MCTS:
         self.c_base = c_base
         self.eps = eps
         self.alpha = alpha
-
-    def search_mode(self):
-        self.network.eval()
-
-    def out_of_search_mode(self):
-        self.network.train()
+        self._model_device = network.device
 
     @torch.no_grad()
     def search(
@@ -135,20 +130,18 @@ class MCTS:
             node = node.parent
             value = -value
 
-    def legal_actions_to_tensor(self, game: Game, device) -> torch.Tensor:
+    def legal_actions_to_tensor(self, game: Game, device: torch.device) -> torch.Tensor:
         mask = torch.zeros(game.get_action_size(), dtype=torch.float32, device=device)
         mask[game.get_legal_actions()] = 1.0
         return mask
 
     @torch.no_grad()
     def _get_policy_and_value(self, game_state: Game, dirichlet_noise: bool = False):
-        model_device = next(self.network.parameters()).device
-
         game_state_tensor: torch.Tensor = game_state.get_canonical_state()
-        if game_state_tensor.device != model_device:
-            game_state_tensor = game_state_tensor.to(model_device)
+        if game_state_tensor.device != self._model_device:
+            game_state_tensor = game_state_tensor.to(self._model_device)
 
-        policy_logits, value = self.network(game_state_tensor)
+        policy_logits, value = self.network.infer(game_state_tensor)
         policy_logits = policy_logits.squeeze(0)
         value = value.squeeze(0)
 
