@@ -8,6 +8,14 @@ class Game(ABC):
     action_dim: int
     state_dim: tuple  # (Channels, Height, Width)
 
+    # @abstractmethod
+    # def get_action_dim():
+    #     pass
+    #
+    # @abstractmethod
+    # def get_state_dim():
+    #     pass
+
     @abstractmethod
     def reset(self):
         pass

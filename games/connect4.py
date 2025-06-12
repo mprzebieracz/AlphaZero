@@ -3,7 +3,9 @@ import numpy as np
 import torch
 from scipy.signal import convolve2d
 
-from games.game import Game, GameState
+# from games.game import Game, GameState
+from games.game import GameState
+from games.game import Game
 import torch.nn.functional as F
 
 
