@@ -6,7 +6,7 @@
 #include <mutex>
 #include <deque>
 #include <random>
-
+#include <numeric>
 
 struct Transition {
     torch::Tensor state;
@@ -22,7 +22,7 @@ class ReplayBuffer {
     size_t ptr = 0, size = 0;
     size_t capacity;
     std::mutex write_mutex;
-    std::mt19937 rng{std::random_device{}()};
+    mutable std::mt19937 rng{std::random_device{}()};
 public:
     ReplayBuffer(size_t capacity) : capacity(capacity), buffer(capacity) {}
 
@@ -43,9 +43,10 @@ public:
         std::vector<torch::Tensor> states, policies;
         std::vector<float> rewards;
 
-        std::vector<size_t> indices(buffer.size());
+        std::vector<size_t> indices(size);
         std::iota(indices.begin(), indices.end(), 0);
         std::shuffle(indices.begin(), indices.end(), rng);
+
 
         for (size_t i = 0; i < batch_size; i++) {
             size_t idx = indices[i];
