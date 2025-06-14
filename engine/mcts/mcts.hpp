@@ -138,6 +138,7 @@ public:
 
 private:
     std::pair<std::vector<float>, float> getPolicyValue(const Game& game, bool dirichletNoise = false) {
+        torch::NoGradGuard no_grad;
         auto state_tensor = game.getCanonicalState();
         if (state_tensor.device() != device) state_tensor = state_tensor.to(device);
 
