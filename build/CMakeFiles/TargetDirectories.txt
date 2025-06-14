@@ -1,0 +1,3 @@
+/home/mati/AlphaZero/build/CMakeFiles/main.dir
+/home/mati/AlphaZero/build/CMakeFiles/edit_cache.dir
+/home/mati/AlphaZero/build/CMakeFiles/rebuild_cache.dir
