@@ -7,6 +7,8 @@
 #include <vector>
 #include <cmath>
 #include <random>
+#include <numeric>
+#include <cstring>
 #include "game.hpp"
 
 struct Inferer {
