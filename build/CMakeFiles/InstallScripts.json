@@ -1,7 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/home/mati/AlphaZero/build/cmake_install.cmake"
-	],
-	"Parallel" : false
-}
