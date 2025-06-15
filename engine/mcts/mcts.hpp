@@ -172,6 +172,9 @@ class MCTS {
         policy = policy * mask_t;
 
         float sum = policy.sum().item<float>();
+
+        policy = policy.cpu();
+
         std::vector<float> policy_vec(A, 0.0f);
         if (sum > 0.0f) {
             policy = policy / sum;
