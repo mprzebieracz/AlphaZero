@@ -8,7 +8,7 @@
 // Abstract base class for game states, enabling hashing and comparison if
 // needed
 class GameState {
-public:
+  public:
     virtual ~GameState() = default;
 
     // Return the canonical tensor representation: (Channels, Height, Width)
@@ -23,7 +23,7 @@ public:
 
 // Abstract base class for Games
 class Game {
-public:
+  public:
     virtual ~Game() = default;
 
     // Reset game to initial state
@@ -40,14 +40,14 @@ public:
     virtual void step(int action) = 0;
 
     // Check if the current state is terminal (game over)
-    virtual bool isTerminal() const = 0;
+    virtual bool is_terminal() const = 0;
 
     // Compute and return the reward for the current state (from perspective of
     // current player)
     virtual float reward() const = 0;
 
     // Get the canonical representation of the state for neural network input
-    virtual torch::Tensor getCanonicalState() const = 0;
+    virtual torch::Tensor get_canonical_state() const = 0;
 
     // Produce a deep copy of the game (for tree search branching)
     virtual std::unique_ptr<Game> clone() const = 0;

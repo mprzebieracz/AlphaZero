@@ -1,17 +1,24 @@
-#include <torch/torch.h>
+#ifndef CONNECT_4_HPP
+#define CONNECT_4_HPP
+
 #include "game.hpp"
 #include <iostream>
 #include <memory>
+#include <torch/torch.h>
 #include <vector>
 
 using std::vector;
 
 class Connect4 : public Game {
-public:
+  public:
     static constexpr int ROWS = 6;
     static constexpr int COLS = 7;
+    static constexpr int action_dim = 7;
+    static constexpr auto state_dim = std::make_tuple(1, 6, 7);
 
-    Connect4() { reset(); }
+    Connect4() {
+        reset();
+    }
     ~Connect4() override = default;
 
     void reset() override {
@@ -54,17 +61,15 @@ public:
         if (checkWin(placedRow, placedCol)) {
             finished = true;
             _reward = currentPlayer;
-        }
-        else if (getLegalActions().empty()) {
+        } else if (getLegalActions().empty()) {
             finished = true; // Draw
             _reward = 0.0f;
-        }
-        else {
+        } else {
             currentPlayer = -currentPlayer; // Switch player
         }
     }
 
-    bool isTerminal() const override {
+    bool is_terminal() const override {
         return finished;
     }
 
@@ -72,7 +77,7 @@ public:
         return _reward;
     }
 
-    torch::Tensor getCanonicalState() const override {
+    torch::Tensor get_canonical_state() const override {
         // Convert the board to a tensor with shape (1, 1, ROWS, COLS)
         torch::Tensor state = torch::zeros({1, 1, ROWS, COLS}, torch::kFloat32);
         for (int row = 0; row < ROWS; row++) {
@@ -102,13 +107,13 @@ public:
         std::cout << "Current Player: " << currentPlayer << std::endl;
     }
 
-private:
+  private:
     bool checkWin(int row, int col) const {
         // Check horizontal, vertical, and diagonal directions for a win
         return checkDirection(row, col, 1, 0) || // Horizontal
                checkDirection(row, col, 0, 1) || // Vertical
                checkDirection(row, col, 1, 1) || // Diagonal /
-               checkDirection(row, col, 1, -1);   // Diagonal
+               checkDirection(row, col, 1, -1);  // Diagonal
     }
 
     bool checkDirection(int row, int col, int dRow, int dCol) const {
@@ -116,17 +121,17 @@ private:
         for (int i = -3; i <= 3; i++) {
             int r = row + i * dRow;
             int c = col + i * dCol;
-            if (r >= 0 && r < ROWS && c >= 0 && c < COLS && board[r][c] == currentPlayer) {
+            if (r >= 0 && r < ROWS && c >= 0 && c < COLS &&
+                board[r][c] == currentPlayer) {
                 count++;
-                if (count == 4) return true; // Found a winning line
-            } 
-            else {
+                if (count == 4)
+                    return true; // Found a winning line
+            } else {
                 count = 0; // Reset count if not matching
             }
         }
         return false;
     }
-
 
     vector<vector<int>> board;
 
@@ -134,3 +139,5 @@ private:
     bool finished;
     float _reward;
 };
+
+#endif // !CONNECT_4_HPP

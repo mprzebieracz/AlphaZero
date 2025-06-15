@@ -1,10 +1,6 @@
 import torch
-from games.connect4 import Connect4
 from injectors import (
-    get_inferer_factory,
-    get_mcts_factory,
     get_network,
-    get_replay_buffer,
     get_trainer,
 )
 from network import AlphaZeroNetwork
@@ -12,6 +8,12 @@ from train import self_play_and_train_loop
 import argparse
 import os
 
+import sys
+
+sys.path.append("../build/training/")
+sys.path.append("../build/engine/")
+
+from engine_bind import Connect4  # pyright: ignore
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 thread_count = 1
@@ -51,11 +53,8 @@ if __name__ == "__main__":
         AlphaZeroNetwork,
         args.checkpoint,
         network_device=device,
-        game=Connect4,
-        load_replay_buffer=get_replay_buffer,
+        game_type=Connect4,
         trainer_factory=get_trainer,
-        inferer_provider_getter=get_inferer_factory,
-        mcts_factory_getter=get_mcts_factory,
         loop_iterations=args.loop_iterations,
         games_in_each_iteration=games_in_each_iteration,
         replay_buffer_size=replay_buffer_size,

@@ -1,4 +1,10 @@
-from games.game import Game
+import sys
+
+sys.path.append("../build/training/")
+sys.path.append("../build/engine/")
+
+import self_play_bind  # pyright: ignore
+from engine_bind import Connect4, Game  # pyright: ignore
 import numpy as np
 
 
