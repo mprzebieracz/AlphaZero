@@ -13,7 +13,7 @@ from tqdm.notebook import tqdm as notebook_tqdm
 sys.path.append("../build/training/")
 sys.path.append("../build/engine/")
 from self_play_bind import self_play  # pyright: ignore
-from engine_bind import Game, ReplayBuffer  # pyright: ignore
+from engine_bind import Game, ReplayBuffer, Connect4  # pyright: ignore
 
 
 tqdm = notebook_tqdm if "ipykernel" in sys.modules else base_tqdm

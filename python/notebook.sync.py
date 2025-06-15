@@ -42,7 +42,8 @@ import sys
 sys.path.append("../build/training/")
 sys.path.append("../build/engine/")
 
-from engine_bind import Connect4  # pyright: ignore
+from engine_bind import Connect4, ReplayBuffer  # pyright: ignore
+from self_play_bind import self_play  # pyright: ignore
 
 # %%
 import cProfile
@@ -56,7 +57,8 @@ device = torch.device("cuda")
 
 network = get_network(Connect4)
 
-network.save_az_network("AZNetwork")
+network_path = "AZNetwork.pt"
+network.save_az_network(network_path)
 
 # %% [markdown]
 # ## Profiling
@@ -64,6 +66,15 @@ network.save_az_network("AZNetwork")
 # ### Self play profiling
 # %%
 # %%time
+
+games_in_each_iteration = 6
+self_play(
+    Connect4(),
+    network_path,
+    ReplayBuffer(1000),
+    games_in_each_iteration,
+    3,
+)
 
 # %% [markdown]
 # ### Trainer profiling
@@ -78,7 +89,7 @@ network.save_az_network("AZNetwork")
 # TODO: write this
 self_play_and_train_loop(
     AlphaZeroNetwork,
-    "AZNetwork",
+    network_path,
     network_device=device,
     game_type=Connect4,
     trainer_factory=get_trainer,

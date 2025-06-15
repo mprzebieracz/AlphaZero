@@ -1,7 +1,10 @@
-#include <torch/torch.h>
 #include <iostream>
+#include <torch/torch.h>
 
 int main() {
+    std::cout << "LibTorch version: " << TORCH_VERSION << std::endl;
+    return 0;
+
     // Check if CUDA is available
     if (torch::cuda::is_available()) {
         std::cout << "CUDA is available! Using GPU.\n";
@@ -10,7 +13,8 @@ int main() {
     }
 
     // Set device
-    torch::Device device(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU);
+    torch::Device device(torch::cuda::is_available() ? torch::kCUDA
+                                                     : torch::kCPU);
 
     // Create a tensor and move it to the selected device
     torch::Tensor tensor = torch::rand({3, 3}).to(device);

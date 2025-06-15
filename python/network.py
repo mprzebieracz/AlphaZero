@@ -66,20 +66,21 @@ class AlphaZeroNetwork(nn.Module):
         return policy, value
 
     def save_az_network(self, path: str):
-        torch.save(
-            {
-                "model_state_dict": self.state_dict(),
-                "init_args": {
-                    "input_channels": self.conv_in.in_channels,
-                    "height": self._height,
-                    "width": self._width,
-                    "num_residual_blocks": len(self.residual_blocks),
-                    "action_size": self.policy_fc.out_features,
-                    "num_filters": self.conv_in.out_channels,
-                },
-            },
-            path,
-        )
+        torch.save(self.state_dict(), path)
+        # torch.save(
+        #     {
+        #         "model_state_dict": self.state_dict(),
+        #         "init_args": {
+        #             "input_channels": self.conv_in.in_channels,
+        #             "height": self._height,
+        #             "width": self._width,
+        #             "num_residual_blocks": len(self.residual_blocks),
+        #             "action_size": self.policy_fc.out_features,
+        #             "num_filters": self.conv_in.out_channels,
+        #         },
+        #     },
+        #     path,
+        # )
 
     @staticmethod
     def load_az_network(path: str, device: torch.device) -> "AlphaZeroNetwork":
