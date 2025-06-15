@@ -77,13 +77,16 @@ void self_play(std::shared_ptr<Game> initial_game, string network_path,
         }
     };
 
+    // worker();
+
+    std::vector<std::thread> threads;
+    for (int i = 1; i < thread_count; ++i) {
+        threads.emplace_back(worker);
+    }
+
     worker();
 
-    // std::vector<std::thread> threads;
-    // for (int i = 0; i < thread_count; ++i) {
-    //     threads.emplace_back(worker);
-    // }
-    // for (auto &t : threads) {
-    //     t.join();
-    // }
+    for (auto &t : threads) {
+        t.join();
+    }
 }

@@ -12,9 +12,13 @@ NetworkInferer::NetworkInferer(const std::string &network_file_path,
               std::get<2>(Connect4::state_dim), residual_block_count,
               Connect4::action_dim, resblock_filter_size),
       Inferer(device) {
+
+    // torch::OrderedDict<std::string, torch::Tensor> weights;
+    // torch::load(weights, network_file_path);
+    // network->load_state_dict(weights);
     // Load the network weights here if needed, e.g.:
     // TODO: come back to this
-    // torch::load(network, network_file_path.data());
+    // torch::load(network, network_file_path);
     network->to(device);
     network->eval();
 }
