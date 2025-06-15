@@ -114,9 +114,12 @@ def self_play_and_train_loop(
     network = network_type.load_az_network(latest_network_path, network_device)
 
     for _ in range(loop_iterations):
+        latest_scripted_network_path = latest_network_path + "_scripted.pt"
+        network.script_and_save_network(latest_scripted_network_path)
+
         self_play(
             game,
-            network_path,
+            latest_scripted_network_path,
             replay_buffer,
             games_in_each_iteration,
             thread_count,

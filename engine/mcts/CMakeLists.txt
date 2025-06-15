@@ -1,0 +1,5 @@
+find_package(Torch REQUIRED)
+file(GLOB MCTS_SRC CONFIGURE_DEPENDS *.cpp)
+add_library(mcts STATIC ${MCTS_SRC})
+target_link_libraries(mcts "${TORCH_LIBRARIES}" game inference)
+target_include_directories(mcts PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

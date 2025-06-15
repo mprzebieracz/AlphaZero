@@ -29,7 +29,7 @@ def get_args():
     parser.add_argument(
         "--checkpoint",
         type=str,
-        default="AZNetwork",
+        default="AZNetwork.pt",
         help="Path to network file, or AZNetwork for default",
     )
     parser.add_argument(

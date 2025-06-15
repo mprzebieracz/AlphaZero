@@ -1,11 +1,13 @@
 #ifndef NETWORK_INFERER_HPP
 #define NETWORK_INFERER_HPP
 
-#include "mcts.hpp"
-#include "network.hpp"
-#include <game/connect4.hpp>
+#include "inferer.hpp"
+#include <connect4.hpp>
 #include <memory>
 #include <string>
+#include <torch/csrc/jit/api/method.h>
+#include <torch/csrc/jit/serialization/import.h>
+#include <torch/script.h>
 #include <torch/torch.h>
 #include <utility>
 
@@ -14,7 +16,8 @@
 
 class NetworkInferer : public Inferer {
   private:
-    AlphaZeroNetwork network;
+    torch::jit::script::Module network;
+    torch::jit::script::Method infer_method;
 
   public:
     NetworkInferer(const std::string &network_file_path, torch::Device device,

@@ -1,6 +1,14 @@
+from typing import Tuple, Type
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+
+import sys
+
+sys.path.append("../build/training/")
+sys.path.append("../build/engine/")
+from engine_bind import Game  # pyright: ignore
 
 
 class ResidualBlock(nn.Module):
@@ -65,22 +73,34 @@ class AlphaZeroNetwork(nn.Module):
 
         return policy, value
 
+    @torch.jit.export
+    def infer(self, X: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Perform a forward pass and return policy and value.
+        This method is exposed for TorchScript.
+        """
+        return self.forward(X)
+
     def save_az_network(self, path: str):
-        torch.save(self.state_dict(), path)
-        # torch.save(
-        #     {
-        #         "model_state_dict": self.state_dict(),
-        #         "init_args": {
-        #             "input_channels": self.conv_in.in_channels,
-        #             "height": self._height,
-        #             "width": self._width,
-        #             "num_residual_blocks": len(self.residual_blocks),
-        #             "action_size": self.policy_fc.out_features,
-        #             "num_filters": self.conv_in.out_channels,
-        #         },
-        #     },
-        #     path,
-        # )
+        torch.save(
+            {
+                "model_state_dict": self.state_dict(),
+                "init_args": {
+                    "input_channels": self.conv_in.in_channels,
+                    "height": self._height,
+                    "width": self._width,
+                    "num_residual_blocks": len(self.residual_blocks),
+                    "action_size": self.policy_fc.out_features,
+                    "num_filters": self.conv_in.out_channels,
+                },
+            },
+            path,
+        )
+
+    def script_and_save_network(self, path: str):
+        scripted_model = torch.jit.script(self)
+
+        scripted_model.save(path)
 
     @staticmethod
     def load_az_network(path: str, device: torch.device) -> "AlphaZeroNetwork":

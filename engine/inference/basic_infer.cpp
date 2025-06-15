@@ -1,17 +1,15 @@
-#include "network.hpp"
-#include <game/connect4.hpp>
-#include <torch/torch.h> // For torch::Tensor and device
-
 #include "basic_inferer.hpp"
+#include "inferer.hpp"
+#include <connect4.hpp>
+#include <torch/csrc/jit/serialization/import.h>
+
+#include <torch/torch.h> // For torch::Tensor and device
 
 NetworkInferer::NetworkInferer(const std::string &network_file_path,
                                torch::Device device, int resblock_filter_size,
                                int residual_block_count)
-    : network(std::get<0>(Connect4::state_dim),
-              std::get<1>(Connect4::state_dim),
-              std::get<2>(Connect4::state_dim), residual_block_count,
-              Connect4::action_dim, resblock_filter_size),
-      Inferer(device) {
+    : Inferer(device), network(torch::jit::load(network_file_path, device)),
+      infer_method(network.get_method("infer")) {
 
     // torch::OrderedDict<std::string, torch::Tensor> weights;
     // torch::load(weights, network_file_path);
@@ -19,15 +17,21 @@ NetworkInferer::NetworkInferer(const std::string &network_file_path,
     // Load the network weights here if needed, e.g.:
     // TODO: come back to this
     // torch::load(network, network_file_path);
-    network->to(device);
-    network->eval();
+
+    network.to(device);
+    network.eval();
+    // torch::jit::script::Module module = torch::jit::load(network_file_path);
 }
 
 // infer method implementation
 std::pair<torch::Tensor, float>
 NetworkInferer::infer(torch::Tensor game_state_tensor) {
-    auto [policy, eval] = network->forward(game_state_tensor);
-    return std::make_pair(std::move(policy), eval.item<float>());
+    auto result = infer_method({game_state_tensor});
+    auto outputs = result.toTuple()->elements();
+    torch::Tensor policy = outputs[0].toTensor();
+    torch::Tensor value = outputs[1].toTensor();
+
+    return std::make_pair(std::move(policy), value.item<float>());
 }
 
 // Constructor for NetworkInfererFactory
