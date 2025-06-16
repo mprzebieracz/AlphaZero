@@ -63,11 +63,11 @@ class AlphaZeroNetwork(nn.Module):
         X = self.residual_blocks(X)
 
         policy = F.relu(self.policy_bn(self.policy_conv(X)))
-        policy = policy.view(policy.size(0), -1)
+        policy = policy.flatten(start_dim=1)
         policy = self.policy_fc(policy)
 
         value = F.relu(self.value_bn(self.value_conv(X)))
-        value = value.view(value.size(0), -1)
+        value = value.flatten(start_dim=1)
         value = F.relu(self.value_fc1(value))
         value = torch.tanh(self.value_fc2(value))
 

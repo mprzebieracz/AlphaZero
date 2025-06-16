@@ -1,5 +1,5 @@
 import torch
-from torch import nn
+from torch import mode, nn
 from torch.nn import functional as F
 from typing import Any, Callable, Type
 
@@ -33,13 +33,18 @@ class AlphaZeroTrainer:
         self.optimizer = optimizer
         self.minibatch_size = minibatch_size
         self.device = device
-        # assert torch.device(device) == next(model.parameters()).device, (
-        #     f"device par: {device} should be the same as {next(model.parameters()).device}"
-        # )
+        assert (
+            torch.device(device).type == next(model.parameters()).device.type
+            # and device.index == next(model.parameters()).device.index
+        ), (
+            f"device par: {device} should be the same as {next(model.parameters()).device}"
+        )
 
     def train(self, batch_size=64, train_steps=1000):
         self.model.train()
+        torch.autograd.detect_anomaly()
         accum_steps = self.minibatch_size // batch_size
+        assert self.minibatch_size % batch_size == 0
         # print(self.replay_buffer.size, self.minibatch_size)
 
         progress_bar: Any = range(train_steps)
@@ -58,6 +63,14 @@ class AlphaZeroTrainer:
             target_policies = target_policies.to(self.device)
             target_values = target_values.to(self.device)
 
+            # print(states.shape, target_policies.shape, target_values.shape)
+            # print(states, target_policies, target_values)
+            # print(target_policies, target_values)
+            if states.shape[0] < batch_size:
+                raise Warning(
+                    f"This shouldn't happen, {states.shape[0]}, {batch_size}"
+                )  # albo raise Warning
+
             for i in range(accum_steps):
                 start = i * batch_size
                 end = start + batch_size
@@ -66,13 +79,31 @@ class AlphaZeroTrainer:
                 pi_batch = target_policies[start:end]
                 v_batch = target_values[start:end]
 
+                s_batch = states[start:end]
+                pi_batch = target_policies[start:end]
+                v_batch = target_values[start:end]
+
                 p_logits, v_preds = self.model(s_batch)
+                v_preds = v_preds.squeeze()
+
                 logp = F.log_softmax(p_logits, dim=1)
+                pi_batch = pi_batch + 1e-8
+                pi_batch = pi_batch / pi_batch.sum(dim=1, keepdim=True)
 
-                policy_loss = -(logp * pi_batch).sum(dim=1).mean()
+                # print("p_logits:", p_logits.min().item(), p_logits.max().item())
+                # print("pi_batch sum:", pi_batch.sum(dim=1))
+                # print("pi_batch any negative:", (pi_batch < 0).any().item())
+                # print("pi_batch any zero:", (pi_batch == 0).any().item())
+                # print("logp any inf:", torch.isinf(logp).any().item())
+                # print("logp any NaN:", torch.isnan(logp).any().item())
+                #
+                policy_loss = F.kl_div(logp, pi_batch, reduction="batchmean")
+                value_loss = F.mse_loss(v_preds, v_batch)
 
-                assert v_preds.shape == v_batch.shape
-                value_loss = F.mse_loss(v_preds.squeeze(), v_batch)
+                assert v_preds.shape == v_batch.shape, (
+                    f"{v_preds.shape} {v_batch.shape}"
+                )
+                value_loss = F.mse_loss(v_preds, v_batch)
 
                 loss = policy_loss + value_loss
                 loss /= accum_steps

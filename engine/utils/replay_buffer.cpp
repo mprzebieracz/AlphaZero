@@ -33,7 +33,7 @@ ReplayBuffer::sample(size_t batch_size) const {
     for (size_t i = 0; i < batch_size; i++) {
         size_t idx = indices[i];
         const Transition &transition = buffer[idx];
-        states.push_back(transition.state);
+        states.push_back(transition.state.squeeze(0));
         policies.push_back(transition.policy);
         rewards.push_back(transition.reward);
     }

@@ -36,7 +36,7 @@ def get_trainer(
     model: nn.Module,
     device: torch.device,
     replay_buffer: ReplayBuffer,
-    minibatch_size=1,
+    minibatch_size=4096,
 ) -> AlphaZeroTrainer:
     optimizer = Adam(model.parameters(), weight_decay=1e-4)
 

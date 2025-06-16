@@ -2,7 +2,7 @@
 #include <game/connect4.hpp>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-// #include <torch/extension.h>
+#include <torch/extension.h>
 // #include <torch/script.h> // For LibTorch (includes pybind11)
 #include <torch/torch.h>
 

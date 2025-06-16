@@ -40,10 +40,13 @@ target_link_libraries(test_libtorch
 add_library(engine_bind MODULE bindings.cpp)
 set_target_properties(engine_bind PROPERTIES PREFIX "")
 
+find_library(TORCH_PYTHON_LIBRARY torch_python
+PATH "${TORCH_INSTALL_PREFIX}/lib")
+
 target_link_libraries(engine_bind
     PRIVATE
-        # pybind11::module
         engine
+        "${TORCH_PYTHON_LIBRARY}"
         "${TORCH_LIBRARIES}"
 )
 
