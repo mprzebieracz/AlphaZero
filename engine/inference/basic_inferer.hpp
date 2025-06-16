@@ -4,25 +4,30 @@
 #include "inferer.hpp"
 #include <connect4.hpp>
 #include <memory>
+#include <mutex>
 #include <string>
-#include <torch/csrc/jit/api/method.h>
-#include <torch/csrc/jit/serialization/import.h>
 #include <torch/script.h>
 #include <torch/torch.h>
+#include <unordered_map>
 #include <utility>
 
 // Forward declaration of AlphaZeroNetworkImpl (if needed)
 // class AlphaZeroNetworkImpl;
 
+typedef std::pair<torch::Tensor, float> inference_result;
+
 class NetworkInferer : public Inferer {
   private:
-    torch::jit::script::Module network;
-    torch::jit::script::Method infer_method;
+    typedef torch::jit::Method Method;
+    typedef torch::jit::script::Module Network;
+
+    // torch::jit::script::Module network;
+    // torch::jit::script::Method infer_method;
+    std::shared_ptr<Network> network;
+    Method infer_method;
 
   public:
-    NetworkInferer(const std::string &network_file_path, torch::Device device,
-                   int resblock_filter_size = 64,
-                   int residual_block_count = 10);
+    NetworkInferer(std::shared_ptr<Network> method, torch::Device device);
 
     std::pair<torch::Tensor, float>
     infer(torch::Tensor game_state_tensor) override;
@@ -32,8 +37,15 @@ class NetworkInferer : public Inferer {
 
 class NetworkInfererFactory : public InfererFactory {
   private:
-    std::string _network_file_path;
-    torch::Device _device;
+    typedef torch::jit::Method Method;
+    typedef torch::jit::script::Module Network;
+
+    std::string network_file_path;
+    torch::Device device;
+
+    std::shared_ptr<Network> network;
+
+    std::mutex get_inferer_mutex;
 
   public:
     NetworkInfererFactory(const std::string &network_file_path,
