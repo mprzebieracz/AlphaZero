@@ -7,7 +7,7 @@ add_compile_definitions(_GLIBCXX_USE_CXX11_ABI=1)
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 find_package(Torch REQUIRED)
-find_package(pybind11 REQUIRED CONFIG)
+# find_package(pybind11 REQUIRED CONFIG)
 
 include_directories(${Python3_INCLUDE_DIRS})
 
@@ -16,7 +16,7 @@ add_subdirectory(mcts)
 add_subdirectory(inference)
 add_subdirectory(utils)
 
-add_library(engine STATIC "" main.cpp)
+add_library(engine STATIC "" test_libtorch.cpp)
 target_link_libraries(engine
     PUBLIC
         game
@@ -31,13 +31,18 @@ target_include_directories(engine PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-# 🔗 Pybind module
+add_executable(test_libtorch test_libtorch.cpp)
+target_link_libraries(test_libtorch
+  "${TORCH_LIBRARIES}"
+)
+
+#  Pybind module
 add_library(engine_bind MODULE bindings.cpp)
 set_target_properties(engine_bind PROPERTIES PREFIX "")
 
 target_link_libraries(engine_bind
     PRIVATE
-        pybind11::module
+        # pybind11::module
         engine
         "${TORCH_LIBRARIES}"
 )

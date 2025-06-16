@@ -3,7 +3,6 @@
 
 int main() {
     std::cout << "LibTorch version: " << TORCH_VERSION << std::endl;
-    return 0;
 
     // Check if CUDA is available
     if (torch::cuda::is_available()) {
