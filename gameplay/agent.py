@@ -1,13 +1,23 @@
 from abc import ABC, abstractmethod
+import threading
+import tkinter as tk
+import numpy as np
+from numpy import argmax
+import torch
+
+import sys
+
+
+sys.path.append("../build/engine/")
+
+from engine_bind import MCTS  # pyright: ignore
+
 
 class Agent(ABC):
     @abstractmethod
     def act(self, game_state) -> int:
         pass
 
-
-import threading
-import tkinter as tk
 
 class UserAgent(Agent):
     def __init__(self):
@@ -22,7 +32,6 @@ class UserAgent(Agent):
             self.move_ready.set()
 
     def act(self, game_state) -> int:
-        # Rejestracja handlera tylko raz, na pierwsze wywołanie act
         if not self._registered:
             root = self._find_root_widget()
             root.bind("<Key>", self._on_key)
@@ -30,19 +39,25 @@ class UserAgent(Agent):
 
         self.selected_column = None
         self.move_ready.clear()
+
+        print("Waiting for move: ")
         self.move_ready.wait()
+
+        assert self.selected_column is not None
         return self.selected_column
 
     def _find_root_widget(self) -> tk.Tk:
-        return tk._default_root
+        return tk._default_root  # pyright: ignore
 
-# todo
+
 class AlphaZeroAgent(Agent):
-    def __init__(self, model, player: int= -1):
-        self.model = model
-        self.mcts = MCTS(model)
+    def __init__(self, network_path, device: torch.device, player: int = -1):
+        self.mcts = MCTS(network_path, device)
         self.player = player
 
     def act(self, game_state) -> int:
+        print("AAAAA")
         policy = self.mcts.search(game_state)
-        return max(policy, key=policy.get)
+        answer = int(argmax(np.array(policy)))
+        print(f"AI chose move: {answer}")
+        return answer

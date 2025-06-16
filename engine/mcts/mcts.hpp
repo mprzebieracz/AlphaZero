@@ -48,6 +48,9 @@ class MCTS {
     MCTS(unique_ptr<Inferer> &&network, float c_init = 1.25f,
          float c_base = 19652.0f, float eps = 0.25f, float alpha = 0.3f);
 
+    MCTS(std::string network_path, torch::Device device, float c_init = 1.25f,
+         float c_base = 19652.0f, float eps = 0.25f, float alpha = 0.3f);
+
     std::vector<float> search(const Game &game, int num_simulations = 800);
 
   private:

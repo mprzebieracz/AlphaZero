@@ -1,9 +1,13 @@
 #include "mcts.hpp"
+#include "basic_inferer.hpp"
 
+#include <c10/core/Device.h>
 #include <cmath>
 #include <cstring>
 #include <memory>
 #include <numeric>
+#include <torch/csrc/jit/serialization/import.h>
+#include <torch/script.h>
 
 #include <random>
 
@@ -63,6 +67,16 @@ MCTS::MCTS(unique_ptr<Inferer> &&network, float c_init, float c_base, float eps,
            float alpha)
     : network(std::move(network)), c_init(c_init), c_base(c_base), eps(eps),
       alpha(alpha), device(this->network->device) {}
+
+MCTS::MCTS(std::string network_path, torch::Device device, float c_init,
+           float c_base, float eps, float alpha)
+    : network([&device, &network_path]() {
+          auto network_inferer_factory =
+              NetworkInfererFactory(network_path, device);
+          return network_inferer_factory.get_inferer();
+      }()),
+      c_init(c_init), c_base(c_base), eps(eps), alpha(alpha),
+      device(this->network->device) {}
 
 std::vector<float> MCTS::search(const Game &game, int num_simulations) {
     auto root = game.clone();

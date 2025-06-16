@@ -20,6 +20,7 @@ class Connect4 : public Game {
 
     void reset() override;
     int getActionSize() const override;
+    int get_current_player() const override;
     vector<int> getLegalActions() const override;
     void step(int action) override;
     bool is_terminal() const override;

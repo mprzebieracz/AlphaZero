@@ -60,6 +60,10 @@ bool Connect4::is_terminal() const {
     return finished;
 }
 
+int Connect4::get_current_player() const {
+    return currentPlayer;
+}
+
 float Connect4::reward() const {
     // Return reward from current player's perspective when finished
     // If not finished, 0.0f
@@ -130,6 +134,6 @@ bool Connect4::checkDirection(int row, int col, int dRow, int dCol) const {
     return false;
 }
 
-vector<vector<int>> get_board_state() const {
+vector<vector<int>> Connect4::get_board_state() const {
     return board;
 }

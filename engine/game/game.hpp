@@ -42,6 +42,8 @@ class Game {
     // Check if the current state is terminal (game over)
     virtual bool is_terminal() const = 0;
 
+    virtual int get_current_player() const = 0;
+
     // Compute and return the reward for the current state (from perspective of
     // current player)
     virtual float reward() const = 0;
@@ -49,7 +51,7 @@ class Game {
     // Get the canonical representation of the state for neural network input
     virtual torch::Tensor get_canonical_state() const = 0;
 
-    // Get board state 
+    // Get board state
     virtual std::vector<std::vector<int>> get_board_state() const = 0;
 
     // Produce a deep copy of the game (for tree search branching)
