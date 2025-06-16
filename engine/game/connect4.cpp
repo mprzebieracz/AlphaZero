@@ -128,4 +128,8 @@ bool Connect4::checkDirection(int row, int col, int dRow, int dCol) const {
         }
     }
     return false;
-} // <-- Make sure this closing brace is present too!
+}
+
+vector<vector<int>> get_board_state() const {
+    return board;
+}

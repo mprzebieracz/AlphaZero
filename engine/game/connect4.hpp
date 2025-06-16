@@ -24,6 +24,7 @@ class Connect4 : public Game {
     void step(int action) override;
     bool is_terminal() const override;
     float reward() const override;
+    std::vector<std::vector<int>> get_board_state() const override;
     torch::Tensor get_canonical_state() const override;
     std::unique_ptr<Game> clone() const override;
     void render() const override;
