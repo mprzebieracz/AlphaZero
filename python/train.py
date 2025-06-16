@@ -1,5 +1,5 @@
 import torch
-from torch import mode, nn
+from torch import nn
 from torch.nn import functional as F
 from typing import Any, Callable, Type
 
@@ -13,7 +13,7 @@ from tqdm.notebook import tqdm as notebook_tqdm
 sys.path.append("../build/training/")
 sys.path.append("../build/engine/")
 from self_play_bind import self_play  # pyright: ignore
-from engine_bind import Game, ReplayBuffer, Connect4  # pyright: ignore
+from engine_bind import Game, ReplayBuffer  # pyright: ignore
 
 
 tqdm = notebook_tqdm if "ipykernel" in sys.modules else base_tqdm
@@ -42,18 +42,18 @@ class AlphaZeroTrainer:
 
     def train(self, batch_size=64, train_steps=1000):
         self.model.train()
-        torch.autograd.detect_anomaly()
+        # torch.autograd.detect_anomaly()
         accum_steps = self.minibatch_size // batch_size
         assert self.minibatch_size % batch_size == 0
         # print(self.replay_buffer.size, self.minibatch_size)
 
         progress_bar: Any = range(train_steps)
 
-        if __debug__:
-            progress_bar = tqdm(progress_bar)
-
         policy_loss: torch.Tensor = torch.tensor(0.0)
         value_loss: torch.Tensor = torch.tensor(0.0)
+
+        if __debug__:
+            progress_bar = tqdm(progress_bar)
 
         for step in progress_bar:
             states, target_policies, target_values = self.replay_buffer.sample(
@@ -66,9 +66,9 @@ class AlphaZeroTrainer:
             # print(states.shape, target_policies.shape, target_values.shape)
             # print(states, target_policies, target_values)
             # print(target_policies, target_values)
-            if states.shape[0] < batch_size:
+            if states.shape[0] < self.minibatch_size:
                 raise Warning(
-                    f"This shouldn't happen, {states.shape[0]}, {batch_size}"
+                    f"This shouldn't happen, {states.shape[0]}, {self.minibatch_size}"
                 )  # albo raise Warning
 
             for i in range(accum_steps):
@@ -76,6 +76,11 @@ class AlphaZeroTrainer:
                 end = start + batch_size
 
                 s_batch = states[start:end]
+
+                assert s_batch.shape[0] != 0, (
+                    f"s_batch shouldn't be empty, {start} {end}"
+                )
+
                 pi_batch = target_policies[start:end]
                 v_batch = target_values[start:end]
 
@@ -94,9 +99,19 @@ class AlphaZeroTrainer:
                 # print("pi_batch sum:", pi_batch.sum(dim=1))
                 # print("pi_batch any negative:", (pi_batch < 0).any().item())
                 # print("pi_batch any zero:", (pi_batch == 0).any().item())
+                assert v_preds.shape[0] != 0, f"{p_logits} {s_batch}"
+                # print(
+                #     v_preds,
+                #     v_batch,
+                #     "MSE LOSS: ",
+                #     F.mse_loss(v_preds.squeeze(), v_batch),
+                #     f"{value_loss.item():.4f}",
+                # )
+                # sleep(1)
+
                 # print("logp any inf:", torch.isinf(logp).any().item())
                 # print("logp any NaN:", torch.isnan(logp).any().item())
-                #
+
                 policy_loss = F.kl_div(logp, pi_batch, reduction="batchmean")
                 value_loss = F.mse_loss(v_preds, v_batch)
 

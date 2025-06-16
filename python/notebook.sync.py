@@ -58,28 +58,36 @@ device = torch.device("cuda")
 network = get_network(Connect4)
 
 network_path = "AZNetwork.pt"
+scripted_network_path = network_path + "_scripted"
 network.save_az_network(network_path)
+network.script_and_save_network(scripted_network_path)
 
 # %% [markdown]
 # ## Profiling
 # %% [markdown]
 # ### Self play profiling
 # %%
+replay_buffer = ReplayBuffer(1000)
+# %%
+network.to(device)
+trainer = get_trainer(network, device, replay_buffer, minibatch_size=256)
+# %%
 # %%time
 
-games_in_each_iteration = 6
+games_in_each_iteration = 12
 self_play(
     Connect4(),
-    network_path,
-    ReplayBuffer(1000),
+    scripted_network_path,
+    replay_buffer,
     games_in_each_iteration,
-    3,
+    4,
 )
 
 # %% [markdown]
 # ### Trainer profiling
 # %%
 # %%time
+trainer.train()
 
 
 # %% [markdown]
@@ -94,8 +102,8 @@ self_play_and_train_loop(
     game_type=Connect4,
     trainer_factory=get_trainer,
     loop_iterations=1,
-    games_in_each_iteration=1,
-    batch_size=1,
+    games_in_each_iteration=5,
+    batch_size=32,
 )
 
 # %% [markdown]
