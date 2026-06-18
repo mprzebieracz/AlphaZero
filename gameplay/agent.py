@@ -46,9 +46,15 @@ class UserAgent(Agent):
 
 class AlphaZeroAgent(Agent):
     def __init__(self, network_path: str, device: torch.device, player: int = -1):
-        self.mcts = MCTS(network_path, device)
+        # Disable Dirichlet noise for evaluation play.
+        self.mcts = MCTS(network_path, device, eps=0.0)
         self.player = player
 
     def act(self, game_state) -> int:
-        policy = self.mcts.search(game_state, 2000, 1)
+        policy = self.mcts.search(
+            game_state,
+            num_simulations=2000,
+            batch_size=1,
+            add_root_noise=False,
+        )
         return int(argmax(np.array(policy)))

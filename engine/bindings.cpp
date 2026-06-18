@@ -60,7 +60,8 @@ PYBIND11_MODULE(engine_bind, m) {
                  py::arg("c_init") = 1.25f, py::arg("c_base") = 19652.0f,
                  py::arg("eps") = 0.25f, py::arg("alpha") = 0.3f)
             .def("search", &MCTS::search, py::arg("game"),
-                 py::arg("num_simulations") = 800, py::arg("batch_size") = 32);
+                 py::arg("num_simulations") = 800, py::arg("batch_size") = 32,
+                 py::arg("add_root_noise") = true);
 
     } catch (const std::exception &e) {
         py::print("Exception during binding:", e.what());
