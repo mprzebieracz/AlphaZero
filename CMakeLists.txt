@@ -22,6 +22,15 @@ endif()
 # Enable RPATH for local library path
 set(CMAKE_BUILD_RPATH "$ENV{HOME}/libs/libtorch/lib")
 
+include(FetchContent)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+FetchContent_Declare(
+  spdlog
+  GIT_REPOSITORY https://github.com/gabime/spdlog.git
+  GIT_TAG v1.12.0
+)
+FetchContent_MakeAvailable(spdlog)
+
 # Add the executable
 
 project(my_ai_engine)

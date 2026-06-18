@@ -4,7 +4,7 @@
 #include <connect4.hpp>
 #include <exception>
 #include <filesystem>
-#include <iostream>
+#include <spdlog/spdlog.h>
 #include <mutex>
 
 #include <torch/torch.h> // For torch::Tensor and device
@@ -70,7 +70,7 @@ std::shared_ptr<Network> get_network_func(std::string network_file_path,
     return std::make_shared<Network>(
         torch::jit::load(network_file_path, device));
   } else {
-    std::cout << "File " << network_file_path << " doesn't exist\n";
+    spdlog::error("File {} doesn't exist", network_file_path);
     throw std::exception();
   }
 }
