@@ -5,14 +5,29 @@ import argparse
 import logging
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
-from engine_bind import Connect4  # pyright: ignore
-
 from agent import AlphaZeroAgent
+from connect4 import Connect4
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
+
+def _to_cpp_inference_game_state(
+    board_state: list[list[int]],
+) -> dict[str, list[list[int]]]:
+    """Convert engine board encoding (0, 1, -1) to schema encoding (0, 1, 2)."""
+    converted_board: list[list[int]] = []
+    for row in board_state:
+        converted_row: list[int] = []
+        for cell in row:
+            if cell == -1:
+                converted_row.append(2)
+            else:
+                converted_row.append(cell)
+        converted_board.append(converted_row)
+    return {"board": converted_board}
 
 
 class GameHandler(BaseHTTPRequestHandler):
@@ -125,7 +140,10 @@ class GameHandler(BaseHTTPRequestHandler):
 
                 # AI move
                 logger.info("Requesting AI move...")
-                ai_move = self.ai_agent.act(self.game_instance.get_board_state())
+                ai_game_state = _to_cpp_inference_game_state(
+                    self.game_instance.get_board_state()
+                )
+                ai_move = self.ai_agent.act(ai_game_state)
                 logger.info(f"AI selected column: {ai_move}")
                 self.game_instance.step(ai_move)
 
