@@ -33,27 +33,22 @@ class AlphaZeroTrainer:
         self.optimizer = optimizer
         self.minibatch_size = minibatch_size
         self.device = device
-        assert (
-            torch.device(device).type == next(model.parameters()).device.type
-            # and device.index == next(model.parameters()).device.index
-        ), (
-            f"device par: {device} should be the same as {next(model.parameters()).device}"
+        assert torch.device(device).type == next(model.parameters()).device.type, (
+            f"trainer device {device} != model device "
+            f"{next(model.parameters()).device}"
         )
 
     def train(self, batch_size=64, train_steps=1000):
         self.model.train()
-        # torch.autograd.detect_anomaly()
-        accum_steps = self.minibatch_size // batch_size
         assert self.minibatch_size % batch_size == 0
-        # print(self.replay_buffer.size, self.minibatch_size)
+        accum_steps = self.minibatch_size // batch_size
 
         progress_bar: Any = range(train_steps)
+        if __debug__:
+            progress_bar = tqdm(progress_bar)
 
         policy_loss: torch.Tensor = torch.tensor(0.0)
         value_loss: torch.Tensor = torch.tensor(0.0)
-
-        if __debug__:
-            progress_bar = tqdm(progress_bar)
 
         for step in progress_bar:
             states, target_policies, target_values = self.replay_buffer.sample(
@@ -63,78 +58,44 @@ class AlphaZeroTrainer:
             target_policies = target_policies.to(self.device)
             target_values = target_values.to(self.device)
 
-            # print(states.shape, target_policies.shape, target_values.shape)
-            # print(states, target_policies, target_values)
-            # print(target_policies, target_values)
             if states.shape[0] < self.minibatch_size:
-                raise Warning(
-                    f"This shouldn't happen, {states.shape[0]}, {self.minibatch_size}"
-                )  # albo raise Warning
+                raise RuntimeError(
+                    f"Replay buffer underfilled: got {states.shape[0]} "
+                    f"samples but requested {self.minibatch_size}. Run more "
+                    f"self-play games before training."
+                )
 
             for i in range(accum_steps):
                 start = i * batch_size
                 end = start + batch_size
 
                 s_batch = states[start:end]
-
-                assert s_batch.shape[0] != 0, (
-                    f"s_batch shouldn't be empty, {start} {end}"
-                )
-
-                pi_batch = target_policies[start:end]
-                v_batch = target_values[start:end]
-
-                s_batch = states[start:end]
                 pi_batch = target_policies[start:end]
                 v_batch = target_values[start:end]
 
                 p_logits, v_preds = self.model(s_batch)
-                v_preds = v_preds.squeeze()
+                v_preds = v_preds.squeeze(-1)
 
                 logp = F.log_softmax(p_logits, dim=1)
                 pi_batch = pi_batch + 1e-8
                 pi_batch = pi_batch / pi_batch.sum(dim=1, keepdim=True)
 
-                # print("p_logits:", p_logits.min().item(), p_logits.max().item())
-                # print("pi_batch sum:", pi_batch.sum(dim=1))
-                # print("pi_batch any negative:", (pi_batch < 0).any().item())
-                # print("pi_batch any zero:", (pi_batch == 0).any().item())
-                assert v_preds.shape[0] != 0, f"{p_logits} {s_batch}"
-                # print(
-                #     v_preds,
-                #     v_batch,
-                #     "MSE LOSS: ",
-                #     F.mse_loss(v_preds.squeeze(), v_batch),
-                #     f"{value_loss.item():.4f}",
-                # )
-                # sleep(1)
-
-                # print("logp any inf:", torch.isinf(logp).any().item())
-                # print("logp any NaN:", torch.isnan(logp).any().item())
-
                 policy_loss = F.kl_div(logp, pi_batch, reduction="batchmean")
                 value_loss = F.mse_loss(v_preds, v_batch)
 
-                assert v_preds.shape == v_batch.shape, (
-                    f"{v_preds.shape} {v_batch.shape}"
-                )
-                value_loss = F.mse_loss(v_preds, v_batch)
-
-                loss = policy_loss + value_loss
-                loss /= accum_steps
+                loss = (policy_loss + value_loss) / accum_steps
                 loss.backward()
 
             self.optimizer.step()
             self.optimizer.zero_grad()
 
-            if __debug__:
-                if step % 100 == 0:
-                    progress_bar.set_postfix(
-                        {
-                            "policy loss": f"{policy_loss.item():.4f}",  # pyright: ignore
-                            "value loss": f"{value_loss.item():.4f}",  # pyright: ignore
-                        }
-                    )
+            if __debug__ and step % 100 == 0:
+                progress_bar.set_postfix(
+                    {
+                        "policy loss": f"{policy_loss.item():.4f}",  # pyright: ignore
+                        "value loss": f"{value_loss.item():.4f}",  # pyright: ignore
+                    }
+                )
 
 
 def self_play_and_train_loop(

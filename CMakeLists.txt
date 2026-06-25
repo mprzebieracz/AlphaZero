@@ -28,6 +28,12 @@ project(my_ai_engine)
 add_subdirectory(engine)
 add_subdirectory(training)
 
+option(BUILD_TESTS "Build C++ tests" ON)
+if(BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
+
 # add_executable(self_play training/self_play.cpp)
 # target_link_libraries(self_play
 #   PRIVATE engine

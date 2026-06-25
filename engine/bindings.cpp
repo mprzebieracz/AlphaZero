@@ -2,6 +2,7 @@
 #include "replay_buffer.hpp"
 #include <c10/core/Device.h>
 #include <game/connect4.hpp>
+#include <game/connect4_solver.hpp>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <torch/extension.h>
@@ -60,7 +61,14 @@ PYBIND11_MODULE(engine_bind, m) {
                  py::arg("c_init") = 1.25f, py::arg("c_base") = 19652.0f,
                  py::arg("eps") = 0.25f, py::arg("alpha") = 0.3f)
             .def("search", &MCTS::search, py::arg("game"),
-                 py::arg("num_simulations") = 800, py::arg("batch_size") = 32);
+                 py::arg("num_simulations") = 800, py::arg("batch_size") = 32,
+                 py::arg("add_root_noise") = true);
+
+        py::class_<Connect4PerfectEngine>(m, "Connect4PerfectEngine")
+            .def(py::init<>())
+            .def("best_move", &Connect4PerfectEngine::best_move, py::arg("board"),
+                 py::arg("current_player"))
+            .def("clear_cache", &Connect4PerfectEngine::clear_cache);
 
     } catch (const std::exception &e) {
         py::print("Exception during binding:", e.what());

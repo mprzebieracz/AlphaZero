@@ -28,7 +28,8 @@ class MCTS {
          float c_base = 19652.0f, float eps = 0.25f, float alpha = 0.3f);
 
     std::vector<float> search(const Game &game, int num_simulations = 800,
-                              int batch_size = 32);
+                              int batch_size = 8,
+                              bool add_root_noise = true);
 
   private:
     class Node;

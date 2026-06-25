@@ -6,11 +6,8 @@ from numpy import argmax
 import torch
 
 import sys
-
-
 sys.path.append("../build/engine/")
-
-from engine_bind import MCTS  # pyright: ignore
+from engine_bind import MCTS
 
 
 class Agent(ABC):
@@ -39,25 +36,25 @@ class UserAgent(Agent):
 
         self.selected_column = None
         self.move_ready.clear()
-
-        print("Waiting for move: ")
+        print("Waiting for move: (press 1-7)")
         self.move_ready.wait()
-
-        assert self.selected_column is not None
         return self.selected_column
 
     def _find_root_widget(self) -> tk.Tk:
-        return tk._default_root  # pyright: ignore
+        return tk._default_root  # assumes already created
 
 
 class AlphaZeroAgent(Agent):
-    def __init__(self, network_path, device: torch.device, player: int = -1):
-        self.mcts = MCTS(network_path, device)
+    def __init__(self, network_path: str, device: torch.device, player: int = -1):
+        # Disable Dirichlet noise for evaluation play.
+        self.mcts = MCTS(network_path, device, eps=0.0)
         self.player = player
 
     def act(self, game_state) -> int:
-        print("AAAAA")
-        policy = self.mcts.search(game_state)
-        answer = int(argmax(np.array(policy)))
-        print(f"AI chose move: {answer}")
-        return answer
+        policy = self.mcts.search(
+            game_state,
+            num_simulations=2000,
+            batch_size=1,
+            add_root_noise=False,
+        )
+        return int(argmax(np.array(policy)))
