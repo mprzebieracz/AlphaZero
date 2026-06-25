@@ -16,11 +16,6 @@ sys.path.append("../build/engine/")
 from engine_bind import Connect4  # pyright: ignore
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# thread_count = 4
-# games_in_each_iteration = 500
-training_iterations = 2000
-minibatch_size = 4096
-replay_buffer_size = 1500 * 35
 
 
 def get_args():
@@ -54,6 +49,15 @@ def get_args():
     )
 
     parser.add_argument("--thread-count", type=int, default=4, help="Thread count")
+    parser.add_argument(
+        "--minibatch-size", type=int, default=4096, help="Replay sample size per train step"
+    )
+    parser.add_argument(
+        "--replay-buffer-size",
+        type=int,
+        default=8000,
+        help="Max transitions stored in the replay buffer",
+    )
     return parser.parse_args()
 
 
@@ -73,9 +77,9 @@ if __name__ == "__main__":
         trainer_factory=get_trainer,
         loop_iterations=args.loop_iterations,
         games_in_each_iteration=args.games_in_each_iteration,
-        replay_buffer_size=replay_buffer_size,
-        training_iterations=training_iterations,
-        minibatch_size=minibatch_size,
+        replay_buffer_size=args.replay_buffer_size,
+        training_iterations=args.training_iterations,
+        minibatch_size=args.minibatch_size,
         batch_size=args.batch_size,
         thread_count=args.thread_count,
     )

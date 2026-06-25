@@ -19,7 +19,8 @@ if __name__ == "__main__":
     az_agent = AlphaZeroAgent(args.network_path, torch.device(args.device))
     user_agent = UserAgent()
 
-    if args.user_first:
+    # if args.user_first:
+    if True:
         play_connect4(user_agent, az_agent)
     else:
         play_connect4(az_agent, user_agent)
