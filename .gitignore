@@ -2,3 +2,9 @@
 .idea
 .vscode
 __pycache__
+build/
+*.pt
+*.npz
+*.log
+models/
+**/__pycache__/

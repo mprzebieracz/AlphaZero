@@ -1,0 +1,80 @@
+import torch
+from injectors import get_network, get_trainer
+from network import AlphaZeroNetwork
+from train import self_play_and_train_loop
+import argparse
+import os
+import sys
+
+sys.path.append("../build/training/")
+sys.path.append("../build/engine/")
+
+from engine_bind import Connect4  # pyright: ignore
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def get_args():
+    parser = argparse.ArgumentParser(description="AlphaZero training loop")
+
+    parser.add_argument(
+        "--checkpoint",
+        type=str,
+        default="AZNetwork.pt_trained",
+        help="Path to network file, or AZNetwork for default",
+    )
+
+    parser.add_argument(
+        "--games-in-each-iteration",
+        type=int,
+        default=400,
+        help="Number of games in each iteration",
+    )
+    parser.add_argument(
+        "--training-iterations",
+        type=int,
+        default=2000,
+        help="Number of training iterations",
+    )
+
+    parser.add_argument(
+        "--loop-iterations", type=int, default=100, help="Number of loop iterations"
+    )
+    parser.add_argument(
+        "--batch-size", type=int, default=256, help="Training batch size"
+    )
+
+    parser.add_argument("--thread-count", type=int, default=4, help="Thread count")
+    parser.add_argument(
+        "--minibatch-size", type=int, default=4096, help="Replay sample size per train step"
+    )
+    parser.add_argument(
+        "--replay-buffer-size",
+        type=int,
+        default=8000,
+        help="Max transitions stored in the replay buffer",
+    )
+    return parser.parse_args()
+
+
+if __name__ == "__main__":
+    args = get_args()
+
+    if not os.path.isfile(args.checkpoint):
+        network = get_network(Connect4)
+        network.save_az_network(args.checkpoint)
+
+    self_play_and_train_loop(
+        AlphaZeroNetwork,
+        args.checkpoint,
+        network_device=device,
+        game_type=Connect4,
+        trainer_factory=get_trainer,
+        loop_iterations=args.loop_iterations,
+        games_in_each_iteration=args.games_in_each_iteration,
+        replay_buffer_size=args.replay_buffer_size,
+        training_iterations=args.training_iterations,
+        minibatch_size=args.minibatch_size,
+        batch_size=args.batch_size,
+        thread_count=args.thread_count,
+    )
