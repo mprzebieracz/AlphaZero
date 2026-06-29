@@ -2,11 +2,9 @@
 #include "replay_buffer.hpp"
 #include <c10/core/Device.h>
 #include <game/connect4.hpp>
-#include <game/connect4_solver.hpp>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <torch/extension.h>
-// #include <torch/script.h> // For LibTorch (includes pybind11)
 #include <torch/torch.h>
 
 namespace py = pybind11;
@@ -40,19 +38,8 @@ PYBIND11_MODULE(engine_bind, m) {
             .def_readonly_static("action_dim", &Connect4::action_dim)
             .def_property_readonly_static(
                 "state_dim", [](py::object /* self */) {
-                    return py::make_tuple(1, 6,
-                                          7); // or use Connect4::state_dim
+                    return py::make_tuple(1, 6, 7);
                 });
-        // .def("reset", &Connect4::reset)
-        // .def("getActionSize", &Connect4::getActionSize)
-        // .def("getLegalActions", &Connect4::getLegalActions)
-        // .def("step", &Connect4::step)
-        // .def("is_terminal", &Connect4::is_terminal)
-        // .def("reward", &Connect4::reward)
-        // .def("get_canonical_state", &Connect4::get_canonical_state)
-        // .def("clone", &Connect4::clone)
-        // .def("render", &Connect4::render)
-        ;
 
         py::class_<MCTS>(m, "MCTS")
             .def(py::init<std::string, torch::Device, float, float, float,
@@ -63,12 +50,6 @@ PYBIND11_MODULE(engine_bind, m) {
             .def("search", &MCTS::search, py::arg("game"),
                  py::arg("num_simulations") = 800, py::arg("batch_size") = 32,
                  py::arg("add_root_noise") = true);
-
-        py::class_<Connect4PerfectEngine>(m, "Connect4PerfectEngine")
-            .def(py::init<>())
-            .def("best_move", &Connect4PerfectEngine::best_move, py::arg("board"),
-                 py::arg("current_player"))
-            .def("clear_cache", &Connect4PerfectEngine::clear_cache);
 
     } catch (const std::exception &e) {
         py::print("Exception during binding:", e.what());

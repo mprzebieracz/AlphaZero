@@ -1,2 +1,3 @@
 ## AlphaZero
-An implementation of the AlphaZero algorithm for chess.
+
+Python training and evaluation entrypoints for the Connect4 AlphaZero project.

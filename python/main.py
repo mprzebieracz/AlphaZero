@@ -1,13 +1,9 @@
 import torch
-from injectors import (
-    get_network,
-    get_trainer,
-)
+from injectors import get_network, get_trainer
 from network import AlphaZeroNetwork
 from train import self_play_and_train_loop
 import argparse
 import os
-
 import sys
 
 sys.path.append("../build/training/")
@@ -19,7 +15,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def get_args():
-    parser = argparse.ArgumentParser(description="My arg parser")
+    parser = argparse.ArgumentParser(description="AlphaZero training loop")
 
     parser.add_argument(
         "--checkpoint",
@@ -61,7 +57,6 @@ def get_args():
     return parser.parse_args()
 
 
-# Example usage
 if __name__ == "__main__":
     args = get_args()
 

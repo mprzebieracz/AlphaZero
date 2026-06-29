@@ -5,6 +5,10 @@
 #include <cstdio>
 #include <cstdlib>
 
+#ifdef CHECK
+#undef CHECK
+#endif
+
 #define CHECK(cond)                                                            \
     do {                                                                       \
         if (!(cond)) {                                                         \

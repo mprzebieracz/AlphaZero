@@ -1,123 +1,0 @@
-  0%|          | 0/250 [00:00<?, ?it/s]  0%|          | 0/250 [00:00<?, ?it/s, policy loss=0.3054, value loss=0.9881]  0%|          | 1/250 [00:00<01:30,  2.76it/s, policy loss=0.3054, value loss=0.9881]  3%|▎         | 7/250 [00:00<00:13, 18.55it/s, policy loss=0.3054, value loss=0.9881]  5%|▌         | 13/250 [00:00<00:08, 29.61it/s, policy loss=0.3054, value loss=0.9881]  8%|▊         | 19/250 [00:00<00:06, 37.07it/s, policy loss=0.3054, value loss=0.9881] 10%|█         | 25/250 [00:00<00:05, 43.21it/s, policy loss=0.3054, value loss=0.9881] 13%|█▎        | 32/250 [00:00<00:04, 49.57it/s, policy loss=0.3054, value loss=0.9881] 16%|█▌        | 39/250 [00:01<00:03, 53.97it/s, policy loss=0.3054, value loss=0.9881] 18%|█▊        | 46/250 [00:01<00:03, 57.05it/s, policy loss=0.3054, value loss=0.9881] 21%|██        | 53/250 [00:01<00:03, 59.17it/s, policy loss=0.3054, value loss=0.9881] 24%|██▍       | 60/250 [00:01<00:03, 60.68it/s, policy loss=0.3054, value loss=0.9881] 27%|██▋       | 67/250 [00:01<00:02, 61.65it/s, policy loss=0.3054, value loss=0.9881] 30%|██▉       | 74/250 [00:01<00:02, 62.37it/s, policy loss=0.3054, value loss=0.9881] 32%|███▏      | 81/250 [00:01<00:02, 62.84it/s, policy loss=0.3054, value loss=0.9881] 35%|███▌      | 88/250 [00:01<00:02, 63.19it/s, policy loss=0.3054, value loss=0.9881] 38%|███▊      | 95/250 [00:01<00:02, 63.44it/s, policy loss=0.3054, value loss=0.9881] 38%|███▊      | 95/250 [00:01<00:02, 63.44it/s, policy loss=0.0206, value loss=0.0887] 41%|████      | 102/250 [00:01<00:02, 63.51it/s, policy loss=0.0206, value loss=0.0887] 44%|████▎     | 109/250 [00:02<00:02, 63.71it/s, policy loss=0.0206, value loss=0.0887] 46%|████▋     | 116/250 [00:02<00:02, 63.78it/s, policy loss=0.0206, value loss=0.0887] 49%|████▉     | 123/250 [00:02<00:01, 63.92it/s, policy loss=0.0206, value loss=0.0887] 52%|█████▏    | 130/250 [00:02<00:01, 64.01it/s, policy loss=0.0206, value loss=0.0887] 55%|█████▍    | 137/250 [00:02<00:01, 64.02it/s, policy loss=0.0206, value loss=0.0887] 58%|█████▊    | 144/250 [00:02<00:01, 63.97it/s, policy loss=0.0206, value loss=0.0887] 60%|██████    | 151/250 [00:02<00:01, 63.99it/s, policy loss=0.0206, value loss=0.0887] 63%|██████▎   | 158/250 [00:02<00:01, 64.01it/s, policy loss=0.0206, value loss=0.0887] 66%|██████▌   | 165/250 [00:02<00:01, 63.99it/s, policy loss=0.0206, value loss=0.0887] 69%|██████▉   | 172/250 [00:03<00:01, 64.12it/s, policy loss=0.0206, value loss=0.0887] 72%|███████▏  | 179/250 [00:03<00:01, 64.06it/s, policy loss=0.0206, value loss=0.0887] 74%|███████▍  | 186/250 [00:03<00:00, 64.02it/s, policy loss=0.0206, value loss=0.0887] 77%|███████▋  | 193/250 [00:03<00:00, 64.04it/s, policy loss=0.0206, value loss=0.0887] 80%|████████  | 200/250 [00:03<00:00, 63.99it/s, policy loss=0.0206, value loss=0.0887] 80%|████████  | 200/250 [00:03<00:00, 63.99it/s, policy loss=0.0102, value loss=0.1159] 83%|████████▎ | 207/250 [00:03<00:00, 63.92it/s, policy loss=0.0102, value loss=0.1159] 86%|████████▌ | 214/250 [00:03<00:00, 63.95it/s, policy loss=0.0102, value loss=0.1159] 88%|████████▊ | 221/250 [00:03<00:00, 63.93it/s, policy loss=0.0102, value loss=0.1159] 91%|█████████ | 228/250 [00:03<00:00, 63.98it/s, policy loss=0.0102, value loss=0.1159] 94%|█████████▍| 235/250 [00:04<00:00, 63.93it/s, policy loss=0.0102, value loss=0.1159] 97%|█████████▋| 242/250 [00:04<00:00, 63.92it/s, policy loss=0.0102, value loss=0.1159]100%|█████████▉| 249/250 [00:04<00:00, 63.96it/s, policy loss=0.0102, value loss=0.1159]100%|██████████| 250/250 [00:04<00:00, 58.05it/s, policy loss=0.0102, value loss=0.1159]
-  0%|          | 0/250 [00:00<?, ?it/s]  0%|          | 0/250 [00:00<?, ?it/s, policy loss=0.2214, value loss=0.6896]  3%|▎         | 7/250 [00:00<00:03, 62.95it/s, policy loss=0.2214, value loss=0.6896]  6%|▌         | 14/250 [00:00<00:03, 63.77it/s, policy loss=0.2214, value loss=0.6896]  8%|▊         | 21/250 [00:00<00:03, 64.04it/s, policy loss=0.2214, value loss=0.6896] 11%|█         | 28/250 [00:00<00:03, 62.39it/s, policy loss=0.2214, value loss=0.6896] 14%|█▍        | 35/250 [00:00<00:03, 61.72it/s, policy loss=0.2214, value loss=0.6896] 17%|█▋        | 42/250 [00:00<00:03, 62.60it/s, policy loss=0.2214, value loss=0.6896] 20%|█▉        | 49/250 [00:00<00:03, 63.10it/s, policy loss=0.2214, value loss=0.6896] 22%|██▏       | 56/250 [00:00<00:03, 63.39it/s, policy loss=0.2214, value loss=0.6896] 25%|██▌       | 63/250 [00:00<00:02, 63.68it/s, policy loss=0.2214, value loss=0.6896] 28%|██▊       | 70/250 [00:01<00:02, 63.77it/s, policy loss=0.2214, value loss=0.6896] 31%|███       | 77/250 [00:01<00:02, 63.85it/s, policy loss=0.2214, value loss=0.6896] 34%|███▎      | 84/250 [00:01<00:02, 63.96it/s, policy loss=0.2214, value loss=0.6896] 36%|███▋      | 91/250 [00:01<00:02, 64.04it/s, policy loss=0.2214, value loss=0.6896] 39%|███▉      | 98/250 [00:01<00:02, 64.03it/s, policy loss=0.2214, value loss=0.6896] 39%|███▉      | 98/250 [00:01<00:02, 64.03it/s, policy loss=0.0358, value loss=0.1558] 42%|████▏     | 105/250 [00:01<00:02, 64.05it/s, policy loss=0.0358, value loss=0.1558] 45%|████▍     | 112/250 [00:01<00:02, 64.08it/s, policy loss=0.0358, value loss=0.1558] 48%|████▊     | 119/250 [00:01<00:02, 64.05it/s, policy loss=0.0358, value loss=0.1558] 50%|█████     | 126/250 [00:01<00:01, 64.09it/s, policy loss=0.0358, value loss=0.1558] 53%|█████▎    | 133/250 [00:02<00:01, 64.11it/s, policy loss=0.0358, value loss=0.1558] 56%|█████▌    | 140/250 [00:02<00:01, 64.26it/s, policy loss=0.0358, value loss=0.1558] 59%|█████▉    | 147/250 [00:02<00:01, 62.30it/s, policy loss=0.0358, value loss=0.1558] 62%|██████▏   | 154/250 [00:02<00:01, 61.27it/s, policy loss=0.0358, value loss=0.1558] 64%|██████▍   | 161/250 [00:02<00:01, 60.30it/s, policy loss=0.0358, value loss=0.1558] 67%|██████▋   | 168/250 [00:02<00:01, 60.49it/s, policy loss=0.0358, value loss=0.1558] 70%|███████   | 175/250 [00:02<00:01, 61.56it/s, policy loss=0.0358, value loss=0.1558] 73%|███████▎  | 182/250 [00:02<00:01, 62.36it/s, policy loss=0.0358, value loss=0.1558] 76%|███████▌  | 189/250 [00:02<00:00, 62.85it/s, policy loss=0.0358, value loss=0.1558] 78%|███████▊  | 196/250 [00:03<00:00, 63.13it/s, policy loss=0.0358, value loss=0.1558] 78%|███████▊  | 196/250 [00:03<00:00, 63.13it/s, policy loss=0.0214, value loss=0.1235] 81%|████████  | 203/250 [00:03<00:00, 63.34it/s, policy loss=0.0214, value loss=0.1235] 84%|████████▍ | 210/250 [00:03<00:00, 63.60it/s, policy loss=0.0214, value loss=0.1235] 87%|████████▋ | 217/250 [00:03<00:00, 63.73it/s, policy loss=0.0214, value loss=0.1235] 90%|████████▉ | 224/250 [00:03<00:00, 63.85it/s, policy loss=0.0214, value loss=0.1235] 92%|█████████▏| 231/250 [00:03<00:00, 63.87it/s, policy loss=0.0214, value loss=0.1235] 95%|█████████▌| 238/250 [00:03<00:00, 63.88it/s, policy loss=0.0214, value loss=0.1235] 98%|█████████▊| 245/250 [00:03<00:00, 63.90it/s, policy loss=0.0214, value loss=0.1235]100%|██████████| 250/250 [00:03<00:00, 63.25it/s, policy loss=0.0214, value loss=0.1235]
-  0%|          | 0/250 [00:00<?, ?it/s]  0%|          | 0/250 [00:00<?, ?it/s, policy loss=0.1410, value loss=0.4463]  2%|▏         | 6/250 [00:00<00:04, 57.78it/s, policy loss=0.1410, value loss=0.4463]  5%|▍         | 12/250 [00:00<00:04, 57.71it/s, policy loss=0.1410, value loss=0.4463]  7%|▋         | 18/250 [00:00<00:03, 58.21it/s, policy loss=0.1410, value loss=0.4463] 10%|█         | 25/250 [00:00<00:03, 59.91it/s, policy loss=0.1410, value loss=0.4463] 13%|█▎        | 32/250 [00:00<00:03, 61.56it/s, policy loss=0.1410, value loss=0.4463] 16%|█▌        | 39/250 [00:00<00:03, 62.59it/s, policy loss=0.1410, value loss=0.4463] 18%|█▊        | 46/250 [00:00<00:03, 63.09it/s, policy loss=0.1410, value loss=0.4463] 21%|██        | 53/250 [00:00<00:03, 63.48it/s, policy loss=0.1410, value loss=0.4463] 24%|██▍       | 60/250 [00:00<00:02, 63.74it/s, policy loss=0.1410, value loss=0.4463] 27%|██▋       | 67/250 [00:01<00:02, 63.91it/s, policy loss=0.1410, value loss=0.4463] 30%|██▉       | 74/250 [00:01<00:02, 64.02it/s, policy loss=0.1410, value loss=0.4463] 32%|███▏      | 81/250 [00:01<00:02, 64.13it/s, policy loss=0.1410, value loss=0.4463] 35%|███▌      | 88/250 [00:01<00:02, 64.10it/s, policy loss=0.1410, value loss=0.4463] 38%|███▊      | 95/250 [00:01<00:02, 64.07it/s, policy loss=0.1410, value loss=0.4463] 38%|███▊      | 95/250 [00:01<00:02, 64.07it/s, policy loss=0.0373, value loss=0.1023] 41%|████      | 102/250 [00:01<00:02, 64.07it/s, policy loss=0.0373, value loss=0.1023] 44%|████▎     | 109/250 [00:01<00:02, 64.19it/s, policy loss=0.0373, value loss=0.1023] 46%|████▋     | 116/250 [00:01<00:02, 64.24it/s, policy loss=0.0373, value loss=0.1023] 49%|████▉     | 123/250 [00:01<00:01, 64.27it/s, policy loss=0.0373, value loss=0.1023] 52%|█████▏    | 130/250 [00:02<00:01, 64.23it/s, policy loss=0.0373, value loss=0.1023] 55%|█████▍    | 137/250 [00:02<00:01, 64.20it/s, policy loss=0.0373, value loss=0.1023] 58%|█████▊    | 144/250 [00:02<00:01, 64.23it/s, policy loss=0.0373, value loss=0.1023] 60%|██████    | 151/250 [00:02<00:01, 64.24it/s, policy loss=0.0373, value loss=0.1023] 63%|██████▎   | 158/250 [00:02<00:01, 64.28it/s, policy loss=0.0373, value loss=0.1023] 66%|██████▌   | 165/250 [00:02<00:01, 64.32it/s, policy loss=0.0373, value loss=0.1023] 69%|██████▉   | 172/250 [00:02<00:01, 64.34it/s, policy loss=0.0373, value loss=0.1023] 72%|███████▏  | 179/250 [00:02<00:01, 64.37it/s, policy loss=0.0373, value loss=0.1023] 74%|███████▍  | 186/250 [00:02<00:00, 64.31it/s, policy loss=0.0373, value loss=0.1023] 77%|███████▋  | 193/250 [00:03<00:00, 64.32it/s, policy loss=0.0373, value loss=0.1023] 80%|████████  | 200/250 [00:03<00:00, 64.29it/s, policy loss=0.0373, value loss=0.1023] 80%|████████  | 200/250 [00:03<00:00, 64.29it/s, policy loss=0.0326, value loss=0.1433] 83%|████████▎ | 207/250 [00:03<00:00, 64.22it/s, policy loss=0.0326, value loss=0.1433] 86%|████████▌ | 214/250 [00:03<00:00, 64.34it/s, policy loss=0.0326, value loss=0.1433] 88%|████████▊ | 221/250 [00:03<00:00, 64.35it/s, policy loss=0.0326, value loss=0.1433] 91%|█████████ | 228/250 [00:03<00:00, 64.36it/s, policy loss=0.0326, value loss=0.1433] 94%|█████████▍| 235/250 [00:03<00:00, 64.30it/s, policy loss=0.0326, value loss=0.1433] 97%|█████████▋| 242/250 [00:03<00:00, 64.28it/s, policy loss=0.0326, value loss=0.1433]100%|█████████▉| 249/250 [00:03<00:00, 64.22it/s, policy loss=0.0326, value loss=0.1433]100%|██████████| 250/250 [00:03<00:00, 63.74it/s, policy loss=0.0326, value loss=0.1433]
-Games played: 0/40
-Games played: 1/40
-Games played: 2/40
-Games played: 3/40
-Games played: 4/40
-Games played: 5/40
-Games played: 6/40
-Games played: 7/40
-Games played: 8/40
-Games played: 9/40
-Games played: 10/40
-Games played: 11/40
-Games played: 12/40
-Games played: 13/40
-Games played: 14/40
-Games played: 15/40
-Games played: 16/40
-Games played: 17/40
-Games played: 18/40
-Games played: 19/40
-Games played: 20/40
-Games played: 21/40
-Games played: 22/40
-Games played: 23/40
-Games played: 24/40
-Games played: 25/40
-Games played: 26/40
-Games played: 27/40
-Games played: 28/40
-Games played: 29/40
-Games played: 30/40
-Games played: 31/40
-Games played: 32/40
-Games played: 33/40
-Games played: 34/40
-Games played: 35/40
-Games played: 36/40
-Games played: 37/40
-Games played: 38/40
-Games played: 39/40
-Games played: 0/40
-Games played: 1/40
-Games played: 2/40
-Games played: 3/40
-Games played: 4/40
-Games played: 5/40
-Games played: 6/40
-Games played: 7/40
-Games played: 8/40
-Games played: 9/40
-Games played: 10/40
-Games played: 11/40
-Games played: 12/40
-Games played: 13/40
-Games played: 14/40
-Games played: 15/40
-Games played: 16/40
-Games played: 17/40
-Games played: 18/40
-Games played: 19/40
-Games played: 20/40
-Games played: 21/40
-Games played: 22/40
-Games played: 23/40
-Games played: 24/40
-Games played: 25/40
-Games played: 26/40
-Games played: 27/40
-Games played: 28/40
-Games played: 29/40
-Games played: 30/40
-Games played: 31/40
-Games played: 32/40
-Games played: 33/40
-Games played: 34/40
-Games played: 35/40
-Games played: 36/40
-Games played: 37/40
-Games played: 38/40
-Games played: 39/40
-Games played: 0/40
-Games played: 1/40
-Games played: 2/40
-Games played: 3/40
-Games played: 4/40
-Games played: 5/40
-Games played: 6/40
-Games played: 7/40
-Games played: 8/40
-Games played: 9/40
-Games played: 10/40
-Games played: 11/40
-Games played: 12/40
-Games played: 13/40
-Games played: 14/40
-Games played: 15/40
-Games played: 16/40
-Games played: 17/40
-Games played: 18/40
-Games played: 19/40
-Games played: 20/40
-Games played: 21/40
-Games played: 22/40
-Games played: 23/40
-Games played: 24/40
-Games played: 25/40
-Games played: 26/40
-Games played: 27/40
-Games played: 28/40
-Games played: 29/40
-Games played: 30/40
-Games played: 31/40
-Games played: 32/40
-Games played: 33/40
-Games played: 34/40
-Games played: 35/40
-Games played: 36/40
-Games played: 37/40
-Games played: 38/40
-Games played: 39/40

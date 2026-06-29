@@ -147,7 +147,11 @@ def parse_args():
 
 def main():
     args = parse_args()
-    device = torch.device(args.device)
+    if args.device == "cuda" and not torch.cuda.is_available():
+        print("CUDA not available, falling back to CPU")
+        device = torch.device("cpu")
+    else:
+        device = torch.device(args.device)
     agent = MCTSAgent(args.network_path, device, args.simulations)
     random_agent = RandomAgent()
 
