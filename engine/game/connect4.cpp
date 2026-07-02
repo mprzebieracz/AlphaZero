@@ -1,35 +1,104 @@
 #include "connect4.hpp"
-#include "game.hpp"
-#include <c10/core/Device.h>
-#include <c10/core/DeviceType.h>
-#include <c10/core/TensorOptions.h>
 #include <iostream>
-#include <stdexcept> // for invalid_argument
+#include <stdexcept>
 #include <string>
-#include <unistd.h>
-#include <vector>
 
-using std::vector;
+Connect4::Connect4() : board(), currentPlayer(1), finished(false), _reward(0.0f) {}
 
-Connect4::Connect4(torch::Device device) : device(device) {
-    reset();
+static int determine_current_player(const Connect4::board_t &board) {
+    int player1_count = 0;
+    int player2_count = 0;
+    for (const auto &row : board) {
+        for (auto cell : row) {
+            if (cell == 1)
+                player1_count++;
+            else if (cell == -1)
+                player2_count++;
+        }
+    }
+    return (player1_count == player2_count) ? 1 : -1;
+}
+
+static Connect4::board_t vector_to_board_t(const std::vector<std::vector<int>> &vec) {
+    if (vec.size() != Connect4::ROWS) {
+        throw std::invalid_argument("Board must have " + std::to_string(Connect4::ROWS) + " rows");
+    }
+    Connect4::board_t b = {};
+    for (int r = 0; r < Connect4::ROWS; r++) {
+        if (vec[r].size() != Connect4::COLS) {
+            throw std::invalid_argument("Board must have " + std::to_string(Connect4::COLS) +
+                                        " columns");
+        }
+        for (int c = 0; c < Connect4::COLS; c++) {
+            b[r][c] = vec[r][c];
+        }
+    }
+    return b;
+}
+
+Connect4::Connect4(const std::vector<std::vector<int>> &initial_board)
+    : Connect4(vector_to_board_t(initial_board)) {}
+
+Connect4::Connect4(const board_t &initial_board)
+    : board(initial_board), currentPlayer(determine_current_player(initial_board)), finished(false),
+      _reward(0.0f) {
+    if (hasWin(board, currentPlayer)) {
+        finished = true;
+        _reward = 1.0f;
+    } else if (hasWin(board, -currentPlayer)) {
+        finished = true;
+        _reward = -1.0f;
+    } else if (isBoardFull(board)) {
+        finished = true;
+    }
+}
+
+bool Connect4::hasWin(const board_t &board, int player) {
+    auto check_dir = [&](int row, int col, int dRow, int dCol) {
+        int count = 0;
+        for (int i = 0; i < 4; i++) {
+            int r = row + (i * dRow);
+            int c = col + (i * dCol);
+            if (r >= 0 && r < ROWS && c >= 0 && c < COLS && board[r][c] == player) {
+                count++;
+            }
+        }
+        return count == 4;
+    };
+
+    for (int row = 0; row < ROWS; row++) {
+        for (int col = 0; col < COLS; col++) {
+            if (board[row][col] != player)
+                continue;
+            if (check_dir(row, col, 0, 1) || check_dir(row, col, 1, 0) ||
+                check_dir(row, col, 1, 1) || check_dir(row, col, -1, 1)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool Connect4::isBoardFull(const board_t &board) {
+    for (int col = 0; col < COLS; col++) {
+        if (board[0][col] == 0)
+            return false;
+    }
+    return true;
 }
 
 void Connect4::reset() {
-    board = vector<vector<int>>(ROWS, vector<int>(COLS, 0));
-    currentPlayer = 1; // Player 1 starts
-    finished = false;
-    _reward = 0.0f;
+    reset_initial_state();
 }
 
 int Connect4::getActionSize() const {
     return COLS;
 }
 
-vector<int> Connect4::get_legal_actions() const {
-    vector<int> legalActions;
+std::vector<int> Connect4::get_legal_actions() const {
+    std::vector<int> legalActions;
     for (int col = 0; col < COLS; col++) {
-        if (board[0][col] == 0) { // Column not full
+        if (board[0][col] == 0) {
             legalActions.push_back(col);
         }
     }
@@ -38,8 +107,7 @@ vector<int> Connect4::get_legal_actions() const {
 
 void Connect4::step(int action) {
     if (finished || action < 0 || action >= COLS || board[0][action] != 0) {
-        throw std::invalid_argument("Invalid action " +
-                                    std::to_string(finished) + " " +
+        throw std::invalid_argument("Invalid action " + std::to_string(finished) + " " +
                                     std::to_string(action));
     }
 
@@ -55,12 +123,12 @@ void Connect4::step(int action) {
 
     if (checkWin(placedRow, placedCol)) {
         finished = true;
-        _reward = 1.0f; // winner reward always positive
+        _reward = 1.0f;
     } else if (get_legal_actions().empty()) {
-        finished = true; // Draw
+        finished = true;
         _reward = 0.0f;
     } else {
-        currentPlayer = -currentPlayer; // Switch player
+        currentPlayer = -currentPlayer;
     }
 }
 
@@ -73,69 +141,67 @@ int Connect4::get_current_player() const {
 }
 
 float Connect4::reward() const {
-    // Return reward from current player's perspective when finished
-    // If not finished, 0.0f
     if (!finished)
         return 0.0f;
     return _reward;
 }
 
-GameState Connect4::get_canonical_state() const {
-    torch::Tensor state = torch::zeros({1, ROWS, COLS}, torch::kFloat32);
-    for (int row = 0; row < ROWS; row++) {
-        for (int col = 0; col < COLS; col++) {
-            state[0][row][col] = board[row][col] * currentPlayer;
-        }
+std::shared_ptr<const GameState> Connect4::get_canonical_state() const {
+    if (weak_from_this().expired()) {
+        return {this, [](const GameState *) {}};
     }
-
-    if (state.device() != device) {
-        state = state.to(device);
-    }
-
-    return GameState(std::move(state));
+    return shared_from_this();
 }
 
-std::unique_ptr<Game> Connect4::clone() const {
-    auto newGame = std::make_unique<Connect4>(device);
-    newGame->board = board;
-    newGame->currentPlayer = currentPlayer;
-    newGame->finished = finished;
-    newGame->_reward = _reward;
-    return newGame;
+std::vector<int64_t> Connect4::get_state_shape() const {
+    return {1, ROWS, COLS};
+}
+
+void Connect4::write_canonical_state(float *out_buffer) const {
+    int idx = 0;
+    for (int row = 0; row < ROWS; row++) {
+        for (int col = 0; col < COLS; col++) {
+            out_buffer[idx++] = static_cast<float>(board[row][col] * currentPlayer);
+        }
+    }
+}
+
+std::shared_ptr<Game> Connect4::clone() const {
+    return std::make_shared<Connect4>(*this);
 }
 
 void Connect4::render() const {
     for (int row = 0; row < ROWS; row++) {
         for (int col = 0; col < COLS; col++) {
-            char piece;
-            if (board[row][col] == 1)
+            char piece = '.';
+            switch (board[row][col]) {
+            case 1:
                 piece = 'X';
-            else if (board[row][col] == -1)
+                break;
+            case -1:
                 piece = 'O';
-            else
-                piece = '.';
+                break;
+            default:
+                break;
+            }
             std::cout << piece << " ";
         }
-        std::cout << std::endl;
+        std::cout << '\n';
     }
-    std::cout << "Current Player: " << (currentPlayer == 1 ? "X" : "O")
-              << std::endl;
+    std::cout << "Current Player: " << (currentPlayer == 1 ? "X" : "O") << '\n';
 }
 
 bool Connect4::checkWin(int row, int col) const {
-    return checkDirection(row, col, 1, 0) || // Horizontal
-           checkDirection(row, col, 0, 1) || // Vertical
-           checkDirection(row, col, 1, 1) || // Diagonal
-           checkDirection(row, col, 1, -1);  // Diagonal
+    return checkDirection(row, col, 1, 0) || checkDirection(row, col, 0, 1) ||
+           checkDirection(row, col, 1, 1) || checkDirection(row, col, 1, -1);
 }
 
 bool Connect4::checkDirection(int row, int col, int dRow, int dCol) const {
     int count = 0;
     for (int i = -3; i <= 3; i++) {
-        int r = row + i * dRow;
-        int c = col + i * dCol;
-        if (r >= 0 && r < ROWS && c >= 0 && c < COLS &&
-            board[r][c] == currentPlayer) {
+        int r = row + (i * dRow);
+        int c = col + (i * dCol);
+        if (r >= 0 && r < ROWS && c >= 0 && c < COLS && board[r][c] == currentPlayer) {
             count++;
             if (count == 4)
                 return true;
@@ -146,6 +212,21 @@ bool Connect4::checkDirection(int row, int col, int dRow, int dCol) const {
     return false;
 }
 
-vector<vector<int>> Connect4::get_board_state() const {
+Connect4::board_t Connect4::get_board_state() const {
     return board;
+}
+
+void Connect4::reset_initial_state() {
+    board = {};
+    currentPlayer = 1;
+    finished = false;
+    _reward = 0.0f;
+}
+
+bool Connect4::hasWin(const std::vector<std::vector<int>> &board, int player) {
+    return hasWin(vector_to_board_t(board), player);
+}
+
+bool Connect4::isBoardFull(const std::vector<std::vector<int>> &board) {
+    return isBoardFull(vector_to_board_t(board));
 }

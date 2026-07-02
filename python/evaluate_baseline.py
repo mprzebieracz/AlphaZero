@@ -55,11 +55,10 @@ class MCTSAgent:
         self.simulations = simulations
 
     def act(self, game) -> int:
-        policy = self.mcts.search(
+        policy, _root_value = self.mcts.search(
             game,
             num_simulations=self.simulations,
             batch_size=1,
-            add_root_noise=False,
         )
         return int(np.argmax(policy))
 
@@ -92,8 +91,7 @@ def find_winner(board) -> int:
 
 
 def play(red, yellow) -> int:
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    game = Connect4(device)
+    game = Connect4()
     while not game.is_terminal:
         agent = red if game.current_player == 1 else yellow
         game.step(agent.act(game))
@@ -119,9 +117,8 @@ PUZZLES = [
 def run_puzzles(agent: MCTSAgent) -> None:
     print("\n=== Tactical puzzles ===")
     passed = 0
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     for i, (moves, player, expected) in enumerate(PUZZLES, 1):
-        game = Connect4(device)
+        game = Connect4()
         for m in moves:
             game.step(m)
         assert game.current_player == player
@@ -136,7 +133,7 @@ def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument(
         "--network-path",
-        default="../models/connect4_long.pt_trained_scripted.pt",
+        default="../checkpoints/connect4/scripted/connect4_AZNetwork_0.pt_scripted",
     )
     p.add_argument("--baseline-path", default="", help="Older checkpoint for arena")
     p.add_argument("--games", type=int, default=40)

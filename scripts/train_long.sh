@@ -8,16 +8,16 @@ SITE="$ROOT/.env/lib/python3.13/site-packages"
 export LD_LIBRARY_PATH="$HOME/libs/libtorch/lib:${LD_LIBRARY_PATH:-}"
 export PYTHONPATH="$SITE"
 
-mkdir -p "$ROOT/models"
+mkdir -p "$ROOT/checkpoints/connect4"
 
-if [[ -f "$ROOT/models/connect4_moderate.pt_trained" && ! -f "$ROOT/models/connect4_long.pt" ]]; then
-  cp "$ROOT/models/connect4_moderate.pt_trained" "$ROOT/models/connect4_long.pt"
-  echo "Warm-starting from connect4_moderate.pt_trained"
+if [[ -f "$ROOT/checkpoints/connect4/scripted/connect4_moderate_0.pt_scripted" ]]; then
+  echo "Warm-starting from existing connect4_moderate checkpoints"
 fi
 
 cd "$ROOT/python"
 exec "$PY" main.py \
-  --checkpoint "$ROOT/models/connect4_long.pt" \
+  --checkpoint-dir "$ROOT/checkpoints/connect4" \
+  --checkpoint-stem connect4_long \
   --loop-iterations 60 \
   --games-in-each-iteration 80 \
   --training-iterations 400 \
