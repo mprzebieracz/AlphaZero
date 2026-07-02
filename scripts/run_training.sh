@@ -8,9 +8,12 @@ SITE="$ROOT/.env/lib/python3.13/site-packages"
 export LD_LIBRARY_PATH="$HOME/libs/libtorch/lib:${LD_LIBRARY_PATH:-}"
 export PYTHONPATH="$SITE"
 
+mkdir -p "$ROOT/checkpoints/connect4"
+
 cd "$ROOT/python"
 exec "$PY" main.py \
-  --checkpoint "$ROOT/models/connect4_moderate.pt" \
+  --checkpoint-dir "$ROOT/checkpoints/connect4" \
+  --checkpoint-stem connect4_moderate \
   --loop-iterations 3 \
   --games-in-each-iteration 40 \
   --training-iterations 250 \

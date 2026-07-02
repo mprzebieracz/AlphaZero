@@ -5,24 +5,24 @@
 #include "mcts.hpp"
 #include "mcts/mcts_factory.hpp"
 #include "replay_buffer.hpp"
+#include <algorithm>
+#include <atomic>
 #include <c10/core/Device.h>
-#include <c10/core/DeviceType.h>
+#include <iostream>
 #include <memory>
 #include <random>
+#include <utility>
 #include <vector>
 
-using std::string;
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 static torch::Tensor vector_to_tensor(std::vector<float> &data) {
-    return torch::from_blob(data.data(), {static_cast<long>(data.size())},
-                            torch::kFloat);
+    return torch::from_blob(data.data(), {static_cast<long>(data.size())}, torch::kFloat);
 }
 
-// trajectory[i] holds the state from the perspective of the player about to
-// move at step i. The last recorded state is the eventual winner's, so it
-// gets +terminal_reward; signs alternate going backwards in time.
-void assign_trajectory_rewards(std::vector<Transition> &trajectory,
-                               float terminal_reward) {
+void assign_trajectory_rewards(std::vector<Transition> &trajectory, float terminal_reward) {
     float value = terminal_reward;
     for (auto it = trajectory.rbegin(); it != trajectory.rend(); ++it) {
         it->reward = value;
@@ -30,68 +30,73 @@ void assign_trajectory_rewards(std::vector<Transition> &trajectory,
     }
 }
 
-static void play_game(std::unique_ptr<Game> game, std::unique_ptr<MCTS> mcts,
-                      ReplayBuffer &replay_buffer) {
+static void play_game(std::shared_ptr<Game> game, MCTS &mcts, ReplayBuffer &replay_buffer,
+                      int mcts_num_simulations, int mcts_batch_size, int max_moves) {
     game->reset();
     std::vector<Transition> trajectory;
 
-    static thread_local std::mt19937 rng(std::random_device{}());
-
-    while (!game->is_terminal()) {
-        auto canonical_state = game->get_canonical_state();
-        torch::Tensor game_state_tensor = std::move(canonical_state);
+    while (!game->is_terminal() && static_cast<int>(trajectory.size()) < max_moves) {
+        auto shape = game->get_state_shape();
+        torch::Tensor game_state_tensor = torch::empty(shape, torch::kFloat32);
+        game->write_canonical_state(game_state_tensor.data_ptr<float>());
         game_state_tensor = game_state_tensor.unsqueeze(0);
-        auto policy = mcts->search(*game);
+        auto [policy, root_value] = mcts.search(*game, mcts_num_simulations, mcts_batch_size);
+        (void)root_value;
 
-        std::discrete_distribution<int> dist(policy.begin(), policy.end());
-        int action = dist(rng);
+        int action = -1;
+        if (trajectory.size() < 30) {
+            std::discrete_distribution<int> dist(policy.begin(), policy.end());
+            static thread_local std::mt19937 rng(std::random_device{}());
+            action = dist(rng);
+        } else {
+            action = static_cast<int>(
+                std::distance(policy.begin(), std::max_element(policy.begin(), policy.end())));
+        }
 
-        trajectory.emplace_back(game_state_tensor,
-                                vector_to_tensor(policy).clone(), 0);
+        trajectory.emplace_back(game_state_tensor, vector_to_tensor(policy).clone(), 0);
         game->step(action);
     }
 
     assign_trajectory_rewards(trajectory, game->reward());
-
     replay_buffer.add(trajectory);
 }
 
-void self_play(std::shared_ptr<Game> initial_game, string network_path,
-               ReplayBuffer &replay_buffer, int num_games, int thread_count) {
+void self_play(std::shared_ptr<Game> initial_game, std::string network_path,
+               ReplayBuffer &replay_buffer, int num_games, int thread_count,
+               int mcts_num_simulations, int mcts_batch_size, int max_moves) {
     auto device = torch::Device(torch::cuda::is_available() ? "cuda" : "cpu");
-    auto game = std::make_unique<Connect4>(device);
 
-    auto inferer_factory = NetworkInfererFactory(network_path, device);
+    int wait_for_count = std::min(thread_count, 4) * mcts_batch_size;
+    int timeout_ms = 2;
+    auto inferer_factory = NetworkInfererFactory(network_path, device, wait_for_count, timeout_ms);
     MCTSFactory mcts_factory(inferer_factory);
 
-    std::atomic<int> games_played{0};
     std::atomic<int> games_finished{0};
-    std::mutex cout_mutex;
 
-    auto worker = [&]() {
-        while (true) {
-            int current = games_played.fetch_add(1);
-            if (current >= num_games)
-                break;
-
-            auto mcts = mcts_factory.get_mcts();
-            play_game(game->clone(), std::move(mcts), replay_buffer);
-            {
-                std::lock_guard<std::mutex> lock(cout_mutex);
-                std::cout << "Games played: " << games_finished++ << "/"
-                          << num_games << "\n";
-            }
-        }
-    };
-
-    // Use thread_count workers total: thread_count-1 extra threads + this one.
-    std::vector<std::thread> threads;
-    for (int i = 1; i < thread_count; ++i) {
-        threads.emplace_back(worker);
+    std::vector<std::unique_ptr<MCTS>> thread_mcts;
+    thread_mcts.reserve(thread_count);
+    for (int t = 0; t < thread_count; t++) {
+        thread_mcts.push_back(mcts_factory.get_mcts());
     }
-    worker();
 
-    for (auto &t : threads) {
-        t.join();
+#ifdef _OPENMP
+#pragma omp parallel for schedule(dynamic) num_threads(thread_count)
+    for (int i = 0; i < num_games; i++) {
+        auto &mcts = thread_mcts[omp_get_thread_num()];
+        play_game(initial_game->clone(), *mcts, replay_buffer, mcts_num_simulations,
+                  mcts_batch_size, max_moves);
+
+        auto current_finished = ++games_finished;
+        std::cout << "Games played: " << current_finished << "/" << num_games << '\n';
     }
+#else
+    for (int i = 0; i < num_games; i++) {
+        auto &mcts = thread_mcts[i % thread_count];
+        play_game(initial_game->clone(), *mcts, replay_buffer, mcts_num_simulations,
+                  mcts_batch_size, max_moves);
+
+        auto current_finished = ++games_finished;
+        std::cout << "Games played: " << current_finished << "/" << num_games << '\n';
+    }
+#endif
 }

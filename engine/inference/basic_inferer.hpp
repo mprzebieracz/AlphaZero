@@ -3,54 +3,41 @@
 
 #include "game.hpp"
 #include "inferer.hpp"
-#include <connect4.hpp>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <torch/script.h>
 #include <torch/torch.h>
-#include <unordered_map>
-#include <utility>
 
-// Forward declaration of AlphaZeroNetworkImpl (if needed)
-// class AlphaZeroNetworkImpl;
-
-typedef std::pair<torch::Tensor, float> inference_result;
+class DynamicBatcher;
 
 class NetworkInferer : public Inferer {
   private:
-    typedef torch::jit::Method Method;
-    typedef torch::jit::script::Module Network;
-
-    // torch::jit::script::Module network;
-    // torch::jit::script::Method infer_method;
-    std::shared_ptr<Network> network;
-    Method infer_method;
+    std::shared_ptr<DynamicBatcher> batcher;
 
   public:
-    NetworkInferer(std::shared_ptr<Network> method, torch::Device device);
+    NetworkInferer(std::shared_ptr<DynamicBatcher> batcher, torch::Device device);
 
-    vector<inference_result>
-    infer(vector<GameState> game_state_tensor) override;
-    // Optional: expose device if needed
-    // torch::Device device() const;
+    std::vector<inference_result>
+    infer(const std::vector<const GameState *> &states) override;
 };
 
 class NetworkInfererFactory : public InfererFactory {
   private:
-    typedef torch::jit::Method Method;
-    typedef torch::jit::script::Module Network;
+    using Network = torch::jit::script::Module;
 
     std::string network_file_path;
     torch::Device device;
+    int wait_for_count;
+    int timeout_ms;
 
     std::shared_ptr<Network> network;
-
+    std::shared_ptr<DynamicBatcher> batcher;
     std::mutex get_inferer_mutex;
 
   public:
-    NetworkInfererFactory(const std::string &network_file_path,
-                          torch::Device device);
+    NetworkInfererFactory(std::string network_file_path, torch::Device device,
+                          int wait_for_count = 1, int timeout_ms = 10);
 
     std::unique_ptr<Inferer> get_inferer() override;
 };

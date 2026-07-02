@@ -25,6 +25,9 @@ target_link_libraries(self_play_bind PRIVATE
     "${TORCH_LIBRARIES}"
 )
 
+target_compile_options(self_play_bind PRIVATE -fopenmp)
+target_link_options(self_play_bind PRIVATE -fopenmp)
+
 # set_target_properties(self_play_bind PROPERTIES
 #     INSTALL_RPATH "$ORIGIN"           # Look in the same dir as the .so file
 #     BUILD_WITH_INSTALL_RPATH TRUE     # Use RPATH even before installation

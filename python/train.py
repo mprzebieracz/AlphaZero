@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from typing import Any, Callable, Type
-
+import logging
 
 from network import AlphaZeroNetwork
 
@@ -14,7 +14,7 @@ sys.path.append("../build/training/")
 sys.path.append("../build/engine/")
 from self_play_bind import self_play  # pyright: ignore
 from engine_bind import Game, ReplayBuffer  # pyright: ignore
-
+from checkpoint_manager import CheckpointManager
 
 tqdm = notebook_tqdm if "ipykernel" in sys.modules else base_tqdm
 
@@ -33,15 +33,19 @@ class AlphaZeroTrainer:
         self.optimizer = optimizer
         self.minibatch_size = minibatch_size
         self.device = device
+
+        self.scaler = torch.amp.GradScaler("cuda", enabled=(self.device.type == "cuda"))
+        if self.device.type == "cuda":
+            torch.backends.cudnn.benchmark = True
+
         assert torch.device(device).type == next(model.parameters()).device.type, (
-            f"trainer device {device} != model device "
-            f"{next(model.parameters()).device}"
+            f"trainer device {device} != model device {next(model.parameters()).device}"
         )
 
     def train(self, batch_size=64, train_steps=1000):
         self.model.train()
-        assert self.minibatch_size % batch_size == 0
         accum_steps = self.minibatch_size // batch_size
+        assert self.minibatch_size % batch_size == 0
 
         progress_bar: Any = range(train_steps)
         if __debug__:
@@ -54,40 +58,40 @@ class AlphaZeroTrainer:
             states, target_policies, target_values = self.replay_buffer.sample(
                 self.minibatch_size
             )
-            states = states.to(self.device)
-            target_policies = target_policies.to(self.device)
-            target_values = target_values.to(self.device)
 
             if states.shape[0] < self.minibatch_size:
-                raise RuntimeError(
-                    f"Replay buffer underfilled: got {states.shape[0]} "
-                    f"samples but requested {self.minibatch_size}. Run more "
-                    f"self-play games before training."
+                logging.info(
+                    f"Not enough data to train yet ({states.shape[0]} < "
+                    f"{self.minibatch_size}). Skipping training step."
                 )
+                return
 
-            for i in range(accum_steps):
-                start = i * batch_size
-                end = start + batch_size
+            states = states.to(self.device, non_blocking=True)
+            target_policies = target_policies.to(self.device, non_blocking=True)
+            target_values = target_values.to(self.device, non_blocking=True)
 
-                s_batch = states[start:end]
-                pi_batch = target_policies[start:end]
-                v_batch = target_values[start:end]
+            for i in range(0, self.minibatch_size, batch_size):
+                s_batch = states[i : i + batch_size]
+                pi_batch = target_policies[i : i + batch_size]
+                v_batch = target_values[i : i + batch_size]
 
-                p_logits, v_preds = self.model(s_batch)
-                v_preds = v_preds.squeeze(-1)
+                with torch.autocast(
+                    device_type=self.device.type, enabled=(self.device.type == "cuda")
+                ):
+                    p_logits, v_preds = self.model(s_batch)
+                    v_preds = v_preds.squeeze(-1)
 
-                logp = F.log_softmax(p_logits, dim=1)
-                pi_batch = pi_batch + 1e-8
-                pi_batch = pi_batch / pi_batch.sum(dim=1, keepdim=True)
+                    logp = F.log_softmax(p_logits, dim=1)
+                    policy_loss = -(pi_batch * logp).sum(dim=1).mean()
+                    value_loss = F.mse_loss(v_preds, v_batch)
 
-                policy_loss = F.kl_div(logp, pi_batch, reduction="batchmean")
-                value_loss = F.mse_loss(v_preds, v_batch)
+                    loss = (policy_loss + value_loss) / accum_steps
 
-                loss = (policy_loss + value_loss) / accum_steps
-                loss.backward()
+                self.scaler.scale(loss).backward()
 
-            self.optimizer.step()
-            self.optimizer.zero_grad()
+            self.scaler.step(self.optimizer)
+            self.scaler.update()
+            self.optimizer.zero_grad(set_to_none=True)
 
             if __debug__ and step % 100 == 0:
                 progress_bar.set_postfix(
@@ -99,8 +103,8 @@ class AlphaZeroTrainer:
 
 
 def self_play_and_train_loop(
+    checkpoint_manager: CheckpointManager,
     network_type: Type[AlphaZeroNetwork],
-    network_path: str,
     network_device: torch.device,
     game_type: Type[Game],
     trainer_factory: Callable[
@@ -111,25 +115,29 @@ def self_play_and_train_loop(
     batch_size=256,
     training_iterations=20,
     thread_count: int = 1,
-    replay_buffer_size=1000,
+    replay_buffer_size=52500,
     minibatch_size=4096,
+    max_moves: int = 512,
+    mcts_batch_size: int = 32,
+    mcts_simulations: int = 800,
 ):
     game = game_type()
     replay_buffer = ReplayBuffer(replay_buffer_size)
 
-    latest_network_path = network_path
-    network = network_type.load_az_network(latest_network_path, network_device)
+    network = network_type.load_az_network(
+        checkpoint_manager.get_latest_checkpoint_file(), network_device
+    )
 
     for _ in range(loop_iterations):
-        latest_scripted_network_path = latest_network_path + "_scripted.pt"
-        network.script_and_save_network(latest_scripted_network_path)
-
         self_play(
             game,
-            latest_scripted_network_path,
+            checkpoint_manager.get_latest_inference_model_file(),
             replay_buffer,
             games_in_each_iteration,
             thread_count,
+            mcts_simulations,
+            mcts_batch_size,
+            max_moves,
         )
 
         trainer = trainer_factory(
@@ -137,5 +145,4 @@ def self_play_and_train_loop(
         )
         trainer.train(batch_size, training_iterations)
 
-        latest_network_path = network_path + "_trained"
-        network.save_az_network(latest_network_path)
+        checkpoint_manager.add_checkpoint(network)

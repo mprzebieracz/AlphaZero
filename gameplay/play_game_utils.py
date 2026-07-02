@@ -1,8 +1,6 @@
 import tkinter as tk
 import threading
 import sys
-import numpy as np
-import torch
 from typing import Optional
 
 sys.path.append("../build/engine/")
@@ -151,7 +149,7 @@ class Connect4GUI:
 
 
 def play_connect4(red: Agent, yellow: Agent):
-    game = Connect4(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+    game = Connect4()
     root = tk.Tk()
     Connect4GUI(root, game, red, yellow)
     root.mainloop()
