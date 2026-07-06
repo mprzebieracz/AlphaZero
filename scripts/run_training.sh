@@ -13,7 +13,7 @@ mkdir -p "$ROOT/checkpoints/connect4"
 cd "$ROOT/python"
 exec "$PY" main.py \
   --checkpoint-dir "$ROOT/checkpoints/connect4" \
-  --checkpoint-stem connect4_moderate \
+  --checkpoint-stem moderate \
   --loop-iterations 3 \
   --games-in-each-iteration 40 \
   --training-iterations 250 \

@@ -12,6 +12,9 @@ static void test_reset_state() {
     for (int c = 0; c < Connect4::COLS; ++c) CHECK_EQ(legal[c], c);
 }
 
+// reward() is expressed from the perspective of the player to move at the
+// terminal state: the player is flipped even on a winning move, so the winner's
+// opponent is "to move" and reward() is -1.
 static void test_horizontal_win_player1() {
     Connect4 g;
     int seq[] = {0, 0, 1, 1, 2, 2};
@@ -19,8 +22,8 @@ static void test_horizontal_win_player1() {
     CHECK(!g.is_terminal());
     g.step(3);
     CHECK(g.is_terminal());
-    CHECK_EQ(g.get_current_player(), 1);
-    CHECK_NEAR(g.reward(), 1.0f, 1e-6);
+    CHECK_EQ(g.get_current_player(), -1);
+    CHECK_NEAR(g.reward(), -1.0f, 1e-6);
 }
 
 static void test_vertical_win_player2() {
@@ -30,8 +33,8 @@ static void test_vertical_win_player2() {
     CHECK(!g.is_terminal());
     g.step(1);
     CHECK(g.is_terminal());
-    CHECK_EQ(g.get_current_player(), -1);
-    CHECK_NEAR(g.reward(), 1.0f, 1e-6);
+    CHECK_EQ(g.get_current_player(), 1);
+    CHECK_NEAR(g.reward(), -1.0f, 1e-6);
 }
 
 static void test_diagonal_win() {
@@ -42,7 +45,7 @@ static void test_diagonal_win() {
     g.step(6);
     g.step(3);
     CHECK(g.is_terminal());
-    CHECK_NEAR(g.reward(), 1.0f, 1e-6);
+    CHECK_NEAR(g.reward(), -1.0f, 1e-6);
 }
 
 static void test_full_column_illegal() {

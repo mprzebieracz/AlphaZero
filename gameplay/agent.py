@@ -1,13 +1,15 @@
 from abc import ABC, abstractmethod
 import threading
 import tkinter as tk
+import sys
+from pathlib import Path
+
 import numpy as np
 from numpy import argmax
 import torch
 
-import sys
-sys.path.append("../build/engine/")
-from engine_bind import MCTS
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "build" / "engine"))
+from engine_bind import MCTS  # noqa: E402
 
 
 class Agent(ABC):

@@ -15,10 +15,12 @@ add_subdirectory(game)
 add_subdirectory(mcts)
 add_subdirectory(inference)
 add_subdirectory(utils)
+add_subdirectory(profiling)
 
-add_library(engine STATIC "" test_libtorch.cpp)
+# Aggregator target: everything that links `engine` gets the full C++ core.
+add_library(engine INTERFACE)
 target_link_libraries(engine
-    PUBLIC
+    INTERFACE
         game
         inference
         mcts
@@ -26,7 +28,7 @@ target_link_libraries(engine
         "${TORCH_LIBRARIES}"
 )
 
-target_include_directories(engine PUBLIC
+target_include_directories(engine INTERFACE
     ${TORCH_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}
 )

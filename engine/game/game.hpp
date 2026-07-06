@@ -6,6 +6,8 @@
 #include <memory>
 #include <vector>
 
+// What the inference layer needs from a position: a canonical (side-to-move
+// perspective) tensor encoding and the legal action indices.
 class GameState {
   public:
     virtual ~GameState() = default;
@@ -24,11 +26,24 @@ class Game : public GameState, public std::enable_shared_from_this<Game> {
     virtual ~Game() = default;
 
     virtual void reset() = 0;
+
+    // Size of the (fixed) action space; legal actions are a subset of [0, size).
     virtual int getActionSize() const = 0;
+
+    // Apply a legal action. Always flips the side to move, including on a
+    // game-ending move.
     virtual void step(int action) = 0;
+
     virtual bool is_terminal() const = 0;
     virtual int get_current_player() const = 0;
+
+    // Value of a terminal state from the perspective of the player to move there
+    // (0 when non-terminal). Because step() flips the player even on a winning
+    // move, a decisive game always ends with reward() == -1: the player to move
+    // is the one who was just mated / lost. MCTS's terminal backpropagation and
+    // self-play's training-target assignment both rely on this convention.
     virtual float reward() const = 0;
+
     virtual std::shared_ptr<const GameState> get_canonical_state() const = 0;
     virtual std::shared_ptr<Game> clone() const = 0;
     virtual void render() const = 0;

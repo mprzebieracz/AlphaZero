@@ -1,16 +1,13 @@
-from torch.optim import Adam
-from network import AlphaZeroNetwork
-from train import AlphaZeroTrainer
 from typing import Type
 
 import torch
 from torch import nn
-import sys
+from torch.optim import Adam
 
-sys.path.append("../build/training/")
-sys.path.append("../build/engine/")
-
+import _paths  # noqa: F401
 from engine_bind import Game, ReplayBuffer  # pyright: ignore
+from network import AlphaZeroNetwork
+from train import AlphaZeroTrainer
 
 
 def get_network(game: Type[Game], resblock_filter_size=64, residual_block_count=10):

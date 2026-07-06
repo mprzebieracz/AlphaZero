@@ -1,11 +1,11 @@
 import tkinter as tk
 import threading
 import sys
-from typing import Optional
+from pathlib import Path
 
-sys.path.append("../build/engine/")
-from engine_bind import Connect4, Game
-from agent import Agent
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "build" / "engine"))
+from engine_bind import Connect4, Game  # noqa: E402
+from agent import Agent  # noqa: E402
 
 CELL_SIZE = 80
 ROWS = 6
@@ -124,10 +124,11 @@ class Connect4GUI:
         threading.Thread(target=self.execute_move, args=(current_agent,)).start()
 
     def handle_game_end(self):
-        winner = self.game.current_player
-        if winner == 0:
+        # reward is -1 from the perspective of the player to move at the terminal
+        # state, so the winner is the *other* player.
+        if self.game.reward == 0:
             self.draw_status("It's a draw.", self.colors["draw"])
-        elif winner == 1:
+        elif -self.game.current_player == 1:
             self.draw_status("Red wins!", self.colors["red"])
         else:
             self.draw_status("Yellow wins!", self.colors["yellow"])

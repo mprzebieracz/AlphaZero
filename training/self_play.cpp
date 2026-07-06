@@ -57,7 +57,11 @@ static void play_game(std::shared_ptr<Game> game, MCTS &mcts, ReplayBuffer &repl
         game->step(action);
     }
 
-    assign_trajectory_rewards(trajectory, game->reward());
+    // game->reward() is expressed for the player to move at the now-terminal state,
+    // i.e. NOT the player who made the trajectory's last recorded move. One sign
+    // flip credits the final move correctly (+1 to the winner); for truncated or
+    // drawn games reward() is 0 and every label stays 0.
+    assign_trajectory_rewards(trajectory, -game->reward());
     replay_buffer.add(trajectory);
 }
 

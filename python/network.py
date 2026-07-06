@@ -1,14 +1,9 @@
 from os import PathLike, fspath
 from typing import Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-import sys
-
-sys.path.append("../build/training/")
-sys.path.append("../build/engine/")
-from engine_bind import Game  # pyright: ignore
 
 
 class ResidualBlock(nn.Module):

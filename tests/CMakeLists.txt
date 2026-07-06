@@ -4,6 +4,7 @@ find_package(Torch REQUIRED)
 
 set(TEST_TARGETS
     test_connect4
+    test_chess
     test_replay_buffer
     test_mcts
     test_self_play_rewards

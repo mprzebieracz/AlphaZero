@@ -10,14 +10,14 @@ export PYTHONPATH="$SITE"
 
 mkdir -p "$ROOT/checkpoints/connect4"
 
-if [[ -f "$ROOT/checkpoints/connect4/scripted/connect4_moderate_0.pt_scripted" ]]; then
-  echo "Warm-starting from existing connect4_moderate checkpoints"
+if [[ -f "$ROOT/checkpoints/connect4/scripted/connect4_long_0.pt_scripted" ]]; then
+  echo "Warm-starting from existing connect4_long checkpoints"
 fi
 
 cd "$ROOT/python"
 exec "$PY" main.py \
   --checkpoint-dir "$ROOT/checkpoints/connect4" \
-  --checkpoint-stem connect4_long \
+  --checkpoint-stem long \
   --loop-iterations 60 \
   --games-in-each-iteration 80 \
   --training-iterations 400 \

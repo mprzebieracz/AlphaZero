@@ -241,10 +241,8 @@ class DynamicBatcher {
 
     void process_batch(std::vector<std::shared_ptr<Task>> tasks) {
         int total_count = 0;
-        int games_count = 0;
         for (const auto &t : tasks) {
             total_count += t->count;
-            games_count += t->count;
         }
         if (total_count == 0)
             return;
@@ -258,32 +256,28 @@ class DynamicBatcher {
             }
         }
 
-        torch::Tensor games_batch;
-        if (games_count > 0) {
-            if (!pinned_buffer.defined() || pinned_buffer.size(0) < games_count) {
-                auto alloc_shape = single_shape;
-                alloc_shape.insert(alloc_shape.begin(), std::max(games_count, wait_for_count * 2));
-                auto options = torch::TensorOptions().dtype(torch::kFloat32).pinned_memory(true);
-                pinned_buffer = torch::empty(alloc_shape, options);
-            }
-
-            auto *giant_data = pinned_buffer.data_ptr<float>();
-            int state_size = 1;
-            for (long i : single_shape)
-                state_size *= i;
-
-            int offset = 0;
-            for (const auto &t : tasks) {
-                for (auto &state : t->states) {
-                    state->write_canonical_state(giant_data +
-                                                 (static_cast<ptrdiff_t>(offset * state_size)));
-                    offset++;
-                }
-            }
-            games_batch = pinned_buffer.slice(0, 0, games_count).to(device, /*non_blocking=*/true);
+        if (!pinned_buffer.defined() || pinned_buffer.size(0) < total_count) {
+            auto alloc_shape = single_shape;
+            alloc_shape.insert(alloc_shape.begin(), std::max(total_count, wait_for_count * 2));
+            auto options = torch::TensorOptions().dtype(torch::kFloat32).pinned_memory(true);
+            pinned_buffer = torch::empty(alloc_shape, options);
         }
 
-        torch::Tensor giant_batch = games_batch;
+        auto *batch_data = pinned_buffer.data_ptr<float>();
+        int state_size = 1;
+        for (long i : single_shape)
+            state_size *= i;
+
+        int write_offset = 0;
+        for (const auto &t : tasks) {
+            for (auto &state : t->states) {
+                state->write_canonical_state(batch_data +
+                                             (static_cast<ptrdiff_t>(write_offset * state_size)));
+                write_offset++;
+            }
+        }
+        torch::Tensor giant_batch =
+            pinned_buffer.slice(0, 0, total_count).to(device, /*non_blocking=*/true);
 
         // Legal actions for every state in the batch, computed here (rather than
         // supplied by the caller) since every GameState can produce its own via

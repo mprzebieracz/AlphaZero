@@ -11,9 +11,11 @@ class CheckpointManager:
     tensorrt_dir_name = "tensorrt"
     scripted_dir_name = "scripted"
 
-    def __init__(self, network_name_stem, checkpoint_dir: Path, max_checkpoints):
+    def __init__(self, network_name_stem, checkpoint_dir: Path, max_checkpoints,
+                 compile_tensorrt=True):
         self.checkpoint_count = 0
         self.max_checkpoints = max_checkpoints
+        self.compile_tensorrt = compile_tensorrt
         assert self.max_checkpoints > 0, "Max checkpoints must be greater than 0"
 
         self.checkpoint_dir = checkpoint_dir
@@ -61,11 +63,18 @@ class CheckpointManager:
         network.save_az_network(self.checkpoint_name_fmstr % 0)
         network.script_and_save_network(self.scripted_name_fmstr % 0)
 
-        if torch.cuda.is_available():
+        if self.compile_tensorrt and torch.cuda.is_available():
             try:
                 network.tensorrt_and_save_network(self.tensorrt_name_fmstr % 0)
             except Exception as e:
                 print(f"Failed to compile TensorRT engine: {e}")
+
+    def save_candidate(self, network: AlphaZeroNetwork) -> str:
+        """Save a scripted copy of `network` for arena evaluation, without touching
+        the checkpoint rotation. Overwritten on every call."""
+        path = self.scripted_dir / f"candidate{self.scripted_checkpoint_suffix}"
+        network.script_and_save_network(path)
+        return str(path)
 
     def get_latest_checkpoint_file(self):
         if self.checkpoint_count <= 0:

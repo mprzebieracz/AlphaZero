@@ -1,9 +1,8 @@
 import logging
-import sys
 
 import numpy as np
 
-sys.path.append("../build/engine/")
+import _paths  # noqa: F401
 from engine_bind import Game  # pyright: ignore
 
 
@@ -13,37 +12,38 @@ def sample_action(action_probs, legal_actions):
     return np.random.choice(legal_actions, p=probs)
 
 
-def play_game(game: Game, mcts_policy_fn, human_plays_as=1) -> float:
-    """
-    Play a terminal-based game where a human plays against the AI.
+def play_game(game: Game, mcts_policy_fn, human_plays_first=True) -> float:
+    """Play a terminal-based game of human vs AI.
+
+    Returns the terminal reward from the AI's perspective (+1 AI won, -1 human
+    won, 0 draw).
     """
     game.reset()
-    player = 1
+    human_to_move = human_plays_first
 
-    while not game.is_terminal():
+    while not game.is_terminal:
         legal_actions = game.get_legal_actions()
 
-        if player == human_plays_as:
+        if human_to_move:
             game.render()
             logging.info("Legal actions: %s", legal_actions)
-            try:
-                action = int(input("Enter your action: "))
-            except Exception:
-                action = -10000
-
+            action = None
             while action not in legal_actions:
-                logging.warning("Invalid action, try again.")
                 try:
                     action = int(input("Enter your action: "))
-                except Exception:
-                    action = -10000
+                except ValueError:
+                    logging.warning("Invalid action, try again.")
         else:
-            policy, _root_value = mcts_policy_fn(game.clone())
+            policy, _root_value = mcts_policy_fn(game)
             action = sample_action(policy, legal_actions)
 
         game.step(action)
-        player *= -1
+        human_to_move = not human_to_move
 
-    final_reward = game.reward()
     game.render()
-    return final_reward
+    # reward is -1 for the side to move at the terminal state, i.e. the side that
+    # did NOT make the winning move. After the final step `human_to_move` already
+    # points at that side.
+    if game.reward == 0:
+        return 0.0
+    return 1.0 if human_to_move else -1.0

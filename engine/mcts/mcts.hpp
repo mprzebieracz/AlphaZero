@@ -9,7 +9,10 @@
 #include <torch/torch.h>
 #include <vector>
 
-constexpr size_t default_arena_size_in_bytes = static_cast<const size_t>(64 * 1024 * 1024);
+// The arena is reset (pool.release()) at the start of every search(); nodes store
+// children sparsely (one entry per legal action), so even chess searches with
+// thousands of simulations stay well within this.
+constexpr size_t default_arena_size_in_bytes = static_cast<const size_t>(64) * 1024 * 1024;
 
 class MCTS {
     using InfererPtr = std::unique_ptr<Inferer>;

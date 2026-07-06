@@ -2,6 +2,7 @@
 #include "mcts.hpp"
 #include "replay_buffer.hpp"
 #include <c10/core/Device.h>
+#include <game/chess.hpp>
 #include <game/connect4.hpp>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -30,8 +31,17 @@ PYBIND11_MODULE(engine_bind, m) {
             .def("get_legal_actions", &Game::get_legal_actions)
             .def("step", &Game::step)
             .def("reset", &Game::reset)
+            .def("render", &Game::render)
+            .def("get_action_size", &Game::getActionSize)
+            .def("canonical_state",
+                 [](const Game &g) {
+                     torch::Tensor t = torch::empty(g.get_state_shape(), torch::kFloat32);
+                     g.write_canonical_state(t.data_ptr<float>());
+                     return t;
+                 })
             .def_property_readonly("is_terminal", &Game::is_terminal)
-            .def_property_readonly("current_player", &Game::get_current_player);
+            .def_property_readonly("current_player", &Game::get_current_player)
+            .def_property_readonly("reward", &Game::reward);
 
         py::class_<Game2D<6, 7>, Game, std::shared_ptr<Game2D<6, 7>>>(m, "Game2D_6_7")
             .def("get_board_state", &Game2D<6, 7>::get_board_state)
@@ -44,6 +54,34 @@ PYBIND11_MODULE(engine_bind, m) {
             .def_readonly_static("action_dim", &Connect4::action_dim)
             .def_property_readonly_static("state_dim",
                                           [](py::object /* self */) { return Connect4::state_dim; });
+
+        py::class_<Game2D<8, 8>, Game, std::shared_ptr<Game2D<8, 8>>>(m, "Game2D_8_8")
+            .def("get_board_state", &Game2D<8, 8>::get_board_state)
+            .def_readonly_static("ROWS", &Game2D<8, 8>::ROWS)
+            .def_readonly_static("COLS", &Game2D<8, 8>::COLS);
+
+        py::class_<Chess, Game2D<8, 8>, std::shared_ptr<Chess>>(m, "Chess")
+            .def(py::init<>())
+            .def("set_custom_state", &Chess::set_custom_state, py::arg("board"),
+                 py::arg("active_player"), py::arg("en_passant_col") = -1, py::arg("k_mc") = 0,
+                 py::arg("r1_mc") = 0, py::arg("r2_mc") = 0, py::arg("K_mc") = 0,
+                 py::arg("R1_mc") = 0, py::arg("R2_mc") = 0)
+            .def_readonly_static("action_dim", &Chess::action_dim)
+            .def_property_readonly_static(
+                "state_dim",
+                [](py::object /* self */) {
+                    return std::make_tuple(Chess::state_dim[0], Chess::state_dim[1],
+                                           Chess::state_dim[2]);
+                })
+            // (from_row, from_col, to_row, to_col, promotion) <-> action index
+            .def_static("decode_action",
+                        [](int action) {
+                            auto a = Chess::decode_action(action);
+                            return std::make_tuple(a.r1, a.c1, a.r2, a.c2, a.promotion);
+                        })
+            .def_static("encode_action", [](int r1, int c1, int r2, int c2, int promotion) {
+                return Chess::encode_action(ChessAction<>(r1, c1, r2, c2, promotion));
+            });
 
         py::class_<MCTS>(m, "MCTS")
             .def(py::init<std::string, torch::Device, float, float, float, float>(),

@@ -121,14 +121,23 @@ void Connect4::step(int action) {
         }
     }
 
-    if (checkWin(placedRow, placedCol)) {
+    bool won = checkWin(placedRow, placedCol); // reads board[r][c] == currentPlayer,
+                                               // so must run before the flip below
+    bool full = !won && get_legal_actions().empty();
+
+    // Always flip whose turn it is, even at a terminal state, matching Chess::step().
+    // This keeps reward()'s contract uniform across games: it is expressed from the
+    // perspective of whoever is "to move" at the current state, so a winning move
+    // yields -1 for the player now to move (they just lost). MCTS's terminal
+    // backpropagation and self_play's training-target assignment rely on this.
+    currentPlayer = -currentPlayer;
+
+    if (won) {
         finished = true;
-        _reward = 1.0f;
-    } else if (get_legal_actions().empty()) {
-        finished = true;
+        _reward = -1.0f;
+    } else if (full) {
+        finished = true; // draw
         _reward = 0.0f;
-    } else {
-        currentPlayer = -currentPlayer;
     }
 }
 

@@ -13,8 +13,12 @@
 #include <unordered_map>
 
 struct MCTS::Node {
-    Node **children;
-    int action_size;
+    // Children are stored sparsely: children[k] is the child for action
+    // valid_actions[k]. A dense array indexed by action would waste ~160KB per
+    // expansion for chess (action space 20480, ~35 legal moves per position).
+    Node **children = nullptr;
+    int *valid_actions = nullptr;
+    int valid_action_count = 0;
     Node *parent = nullptr;
     int visits = 0;
     float value = 0.0f;
@@ -23,12 +27,10 @@ struct MCTS::Node {
     bool is_terminal = false;
     float reward = 0.0f;
     int virtual_loss_count = 0;
-    int *valid_actions = nullptr;
-    int valid_action_count = 0;
     static constexpr float VL = 1.0f;
 
-    Node(int action_size, std::pmr::memory_resource *pool, float prior_value = 0.0f,
-         Node *parent_node = nullptr, bool terminal = false, float rew = 0.0f);
+    Node(float prior_value = 0.0f, Node *parent_node = nullptr, bool terminal = false,
+         float rew = 0.0f);
 
     float Q() const;
     float UCB(float exploration_weight) const;
@@ -54,13 +56,15 @@ void MCTS::Node::backpropagate(Node *node, float value, bool vloss) {
     }
 }
 
-MCTS::Node::Node(int action_size, std::pmr::memory_resource * /*pool*/, float prior_value,
-                 Node *parent_node, bool terminal, float rew)
-    : action_size(action_size), parent(parent_node), prior(prior_value), is_terminal(terminal),
-      children(nullptr), reward(rew), valid_actions(nullptr), valid_action_count(0) {}
+MCTS::Node::Node(float prior_value, Node *parent_node, bool terminal, float rew)
+    : parent(parent_node), prior(prior_value), is_terminal(terminal), reward(rew) {}
 
 float MCTS::Node::Q() const {
-    float adj_value = value - (virtual_loss_count * VL);
+    // Q is from this node's own (player-to-move) perspective; the parent selects on
+    // -Q(child). Virtual loss must make an in-flight node look *worse* to the
+    // parent, i.e. push -Q down, so it is *added* here. (Subtracting it - the old
+    // bug - made concurrent simulations pile onto the same leaf.)
+    float adj_value = value + (virtual_loss_count * VL);
     int adj_visits = visits + virtual_loss_count;
     return adj_visits > 0 ? adj_value / adj_visits : 0.0f;
 }
@@ -75,23 +79,19 @@ float MCTS::Node::UCB(float exploration_weight) const {
 
 void MCTS::Node::expand(const std::vector<std::pair<int, float>> &policy,
                         std::pmr::memory_resource *pool) {
-    children = static_cast<Node **>(pool->allocate(action_size * sizeof(Node *), alignof(Node *)));
-    std::memset(static_cast<void *>(children), 0, action_size * sizeof(Node *));
-
+    children = static_cast<Node **>(pool->allocate(policy.size() * sizeof(Node *), alignof(Node *)));
     valid_actions = static_cast<int *>(pool->allocate(policy.size() * sizeof(int), alignof(int)));
-    int idx = 0;
 
     std::pmr::polymorphic_allocator<Node> alloc(pool);
-    for (const auto &pair : policy) {
-        int i = pair.first;
-        float p = pair.second;
+    int idx = 0;
+    for (const auto &[action, p] : policy) {
         if (p == 0.0f)
             continue;
-
         Node *child = alloc.allocate(1);
-        alloc.construct(child, action_size, pool, p, this, false, 0.0f);
-        children[i] = child;
-        valid_actions[idx++] = i;
+        alloc.construct(child, p, this, false, 0.0f);
+        children[idx] = child;
+        valid_actions[idx] = action;
+        ++idx;
     }
     valid_action_count = idx;
     expanded = true;
@@ -109,14 +109,14 @@ std::pair<int, MCTS::Node *> MCTS::Node::select_child(float exploration_weight) 
     int best_index = -1;
     float best_value = -std::numeric_limits<float>::infinity();
     for (int k = 0; k < valid_action_count; ++k) {
-        int i = valid_actions[k];
-        float ucb_value = children[i]->UCB(exploration_weight);
+        float ucb_value = children[k]->UCB(exploration_weight);
         if (ucb_value > best_value) {
             best_value = ucb_value;
-            best_index = i;
+            best_index = k;
         }
     }
-    return {best_index, best_index != -1 ? children[best_index] : nullptr};
+    return {best_index != -1 ? valid_actions[best_index] : -1,
+            best_index != -1 ? children[best_index] : nullptr};
 }
 
 MCTS::MCTS(std::unique_ptr<Inferer> &&network_ptr, float c_init, float c_base, float eps,
@@ -172,7 +172,7 @@ void MCTS::evaluate_batch(std::vector<std::pair<Node *, std::shared_ptr<Game>>> 
 std::pair<std::vector<float>, float> MCTS::search(const Game &game, int num_simulations,
                                                   int batch_size) {
     pool.release();
-    Node root_node(game.getActionSize(), &pool, 0.0f, nullptr, game.is_terminal(), game.reward());
+    Node root_node(0.0f, nullptr, game.is_terminal(), game.reward());
 
     auto inference_res =
         network->infer(std::vector<const GameState *>{game.get_canonical_state().get()});
@@ -211,18 +211,19 @@ std::pair<std::vector<float>, float> MCTS::search(const Game &game, int num_simu
             if (!node->terminal()) {
                 leaves.emplace_back(node, std::move(current_game));
             } else {
-                Node::backpropagate(node, -node->reward, true);
+                // node->reward is already expressed for the player to move at this
+                // node (Game::reward()'s contract), the same convention in which
+                // evaluate_batch() passes res.value - no re-negation.
+                Node::backpropagate(node, node->reward, true);
             }
         }
 
         evaluate_batch(leaves, &pool);
     }
 
-    int A = game.getActionSize();
-    std::vector<float> pi(A, 0.0f);
-    for (int a = 0; a < A; a++) {
-        if (root_node.children[a] != nullptr)
-            pi[a] = static_cast<float>(root_node.children[a]->visits);
+    std::vector<float> pi(game.getActionSize(), 0.0f);
+    for (int k = 0; k < root_node.valid_action_count; ++k) {
+        pi[root_node.valid_actions[k]] = static_cast<float>(root_node.children[k]->visits);
     }
     float sum = std::accumulate(pi.begin(), pi.end(), 0.0f);
     if (sum > 0.0f)

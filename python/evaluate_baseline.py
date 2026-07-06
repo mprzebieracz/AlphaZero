@@ -10,14 +10,13 @@ from __future__ import annotations
 
 import argparse
 import random
-import sys
 from dataclasses import dataclass
 
 import numpy as np
 import torch
 
-sys.path.append("../build/engine/")
-from engine_bind import Connect4, MCTS  # pyright: ignore
+import _paths  # noqa: F401
+from engine_bind import MCTS, Connect4  # pyright: ignore
 
 
 @dataclass
